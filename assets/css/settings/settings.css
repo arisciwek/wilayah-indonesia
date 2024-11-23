@@ -1,0 +1,43 @@
+/*
+ * File: assets/css/settings/settings.css
+ */
+
+.tab-content.hidden {
+    display: none;
+}
+
+.permissions-matrix {
+    margin-top: 20px;
+}
+
+#permissions-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+#permissions-table th,
+#permissions-table td {
+    padding: 10px;
+    text-align: left;
+    border: 1px solid #ccc;
+}
+
+#permissions-table th {
+    background-color: #f5f5f5;
+}
+
+#setting-message {
+    margin: 20px 0;
+    padding: 10px;
+    border-left: 4px solid;
+}
+
+.notice-success {
+    border-left-color: #46b450;
+    background-color: #fff;
+}
+
+.notice-error {
+    border-left-color: #dc3232;
+    background-color: #fff;
+}

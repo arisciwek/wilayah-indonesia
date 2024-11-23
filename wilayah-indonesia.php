@@ -1,155 +1,72 @@
 <?php
 /**
  * Plugin Name: Wilayah Indonesia
- * Plugin URI: https://github.com/yourusername/wilayah-indonesia
- * Description: Plugin untuk manajemen data wilayah Indonesia
+ * Plugin URI: 
+ * Description: Plugin untuk mengelola data wilayah Indonesia
  * Version: 1.0.0
  * Author: Your Name
- * Author URI: https://yourwebsite.com
  * License: GPL v2 or later
- * Text Domain: wilayah-indonesia
  */
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+defined('ABSPATH') || exit;
 
-// Define plugin constants
-define('WILAYAH_VERSION', '1.0.0');
-define('WILAYAH_PATH', plugin_dir_path(__FILE__));
-define('WILAYAH_URL', plugin_dir_url(__FILE__));
-define('WILAYAH_PROVINSI_TABLE', 'wilayah_provinsi');
-
-// Autoloader for classes
-spl_autoload_register(function ($class) {
-    $prefix = 'WilayahIndonesia\\';
-    $base_dir = WILAYAH_PATH . 'includes/';
-
-    $len = strlen($prefix);
-    if (strncmp($prefix, $class, $len) !== 0) {
-        return;
-    }
-
-    $relative_class = substr($class, $len);
-    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
-
-    if (file_exists($file)) {
-        require $file;
-    }
-});
-
-// Main plugin class
-class Wilayah_Indonesia {
+class WilayahIndonesia {
     private static $instance = null;
-    private $admin;
-    private $helper;
-
-    private function __construct() {
-        $this->load_dependencies();
-        $this->init_hooks();
-    }
-
-    public static function get_instance() {
+    private $loader;
+    
+    public static function getInstance() {
         if (null === self::$instance) {
             self::$instance = new self();
         }
         return self::$instance;
     }
 
-    private function load_dependencies() {
-        // Core classes
-        require_once WILAYAH_PATH . 'includes/class-activator.php';
-        require_once WILAYAH_PATH . 'includes/class-deactivator.php';
-        require_once WILAYAH_PATH . 'includes/class-admin.php';
-        require_once WILAYAH_PATH . 'includes/class-helper.php';
-
-        // Initialize main components
-        $this->admin = new WilayahIndonesia\Admin();
-        $this->helper = WilayahIndonesia\Helper::get_instance();
+    private function __construct() {
+        $this->defineConstants();
+        $this->includeDependencies();
+        $this->initHooks();
     }
 
-    private function init_hooks() {
-        register_activation_hook(__FILE__, array('WilayahIndonesia\Activator', 'activate'));
-        register_deactivation_hook(__FILE__, array('WilayahIndonesia\Deactivator', 'deactivate'));
+    private function defineConstants() {
+        define('WILAYAH_INDONESIA_VERSION', '1.0.0');
+        define('WILAYAH_INDONESIA_FILE', __FILE__);
+        define('WILAYAH_INDONESIA_PATH', plugin_dir_path(__FILE__));
+        define('WILAYAH_INDONESIA_URL', plugin_dir_url(__FILE__));
+    }
+
+    private function includeDependencies() {
+        require_once WILAYAH_INDONESIA_PATH . 'includes/class-loader.php';
+        require_once WILAYAH_INDONESIA_PATH . 'includes/class-activator.php';
+        require_once WILAYAH_INDONESIA_PATH . 'includes/class-deactivator.php';
         
-        add_action('plugins_loaded', array($this, 'load_textdomain'));
-        add_action('init', array($this, 'init'));
-        add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/MenuManager.php';
+        
+        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/Settings/SettingsController.php';
+        new SettingsController();
+
+
+        $this->loader = new Wilayah_Indonesia_Loader();
     }
 
-    public function init() {
-        $this->check_version();
+    private function initHooks() {
+        register_activation_hook(__FILE__, array('Wilayah_Indonesia_Activator', 'activate'));
+        register_deactivation_hook(__FILE__, array('Wilayah_Indonesia_Deactivator', 'deactivate'));
+        
+        // Inisialisasi menu
+        $menu_manager = new \WilayahIndonesia\Controllers\MenuManager($this->plugin_name, $this->version);
+        $this->loader->add_action('init', $menu_manager, 'init');
     }
 
-    private function check_version() {
-        if (get_option('wilayah_indonesia_version') !== WILAYAH_VERSION) {
-            WilayahIndonesia\Activator::activate();
-            update_option('wilayah_indonesia_version', WILAYAH_VERSION);
-        }
-    }
-
-    public function enqueue_admin_assets($hook) {
-        // Only load on plugin pages
-        if (strpos($hook, 'wilayah-indonesia') === false) {
-            return;
-        }
-
-        // Enqueue Tailwind CSS
-        wp_enqueue_style('tailwind-css', 'https://cdn.tailwindcss.com', array(), WILAYAH_VERSION);
-
-        // Enqueue DataTables CSS
-        wp_enqueue_style(
-            'datatables', 
-            'https://cdn.datatables.net/1.11.5/css/jquery.dataTables.min.css', 
-            array(), 
-            '1.11.5'
-        );
-
-        // Enqueue custom plugin CSS
-        wp_enqueue_style(
-            'wilayah-indonesia-admin',
-            WILAYAH_URL . 'assets/css/admin.css',
-            array('datatables'),
-            WILAYAH_VERSION
-        );
-
-        // Enqueue DataTables JS
-        wp_enqueue_script(
-            'datatables',
-            'https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js',
-            array('jquery'),
-            '1.11.5',
-            true
-        );
-
-        // Enqueue custom plugin JavaScript
-        wp_enqueue_script(
-            'wilayah-indonesia-admin',
-            WILAYAH_URL . 'assets/js/admin.js',
-            array('jquery', 'datatables'),
-            WILAYAH_VERSION,
-            true
-        );
-
-        // Localize script
-        wp_localize_script('wilayah-indonesia-admin', 'wilayahIndonesia', array(
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('wilayah_indonesia_nonce'),
-            'messages' => array(
-                'delete_confirm' => __('Apakah Anda yakin ingin menghapus provinsi ini?', 'wilayah-indonesia'),
-                'error' => __('Terjadi kesalahan', 'wilayah-indonesia')
-            )
-        ));
-    }
-
-    public function load_textdomain() {
-        load_plugin_textdomain('wilayah-indonesia', false, dirname(plugin_basename(__FILE__)) . '/languages');
+    public function run() {
+        $this->loader->run();
     }
 }
 
 // Initialize plugin
-function run_wilayah_indonesia() {
-    return Wilayah_Indonesia::get_instance();
+function wilayah_indonesia() {
+    return WilayahIndonesia::getInstance();
 }
 
-run_wilayah_indonesia();
+// Start the plugin
+wilayah_indonesia()->run();
+
