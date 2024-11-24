@@ -1,0 +1,56 @@
+/**
+ * File: assets/css/settings/settings-style.css
+ */
+
+/* Tab styling */
+.nav-tab-wrapper {
+    margin-bottom: 1em;
+}
+
+.tab-content.hidden {
+    display: none;
+}
+
+/* Permissions matrix styling */
+.permissions-matrix {
+    margin-top: 20px;
+    overflow-x: auto;
+}
+
+#permissions-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+#permissions-table th,
+#permissions-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#permissions-table th {
+    background-color: #f5f5f5;
+    font-weight: bold;
+}
+
+#permissions-table td:first-child {
+    font-weight: bold;
+    background-color: #f9f9f9;
+}
+
+#permissions-table input[type="checkbox"] {
+    margin: 0;
+}
+
+#permissions-table input[type="checkbox"]:disabled {
+    opacity: 0.5;
+}
+
+.matrix-description {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f8f8f8;
+    border-left: 4px solid #0073aa;
+}

@@ -1,0 +1,61 @@
+/* File: assets/css/settings/permissions.css */
+
+.permissions-matrix {
+    margin: 20px 0;
+}
+
+.permissions-matrix table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+.permissions-matrix th {
+    background: #f5f5f5;
+    padding: 8px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.permissions-matrix td {
+    padding: 8px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.permissions-matrix tr:hover {
+    background: #f9f9f9;
+}
+
+.required-capability {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.has-capability {
+    background-color: #f0f7ff;
+}
+
+.bulk-actions {
+    margin: 10px 0;
+}
+
+.role-heading {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.capability-description {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 2px;
+}
+
+.capability-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}

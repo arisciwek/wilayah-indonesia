@@ -9,9 +9,9 @@ wilayah-indonesia/
 │   │   ├── fontawesome.min.css
 │   │   ├── province.css
 │   │   └── settings/
-│   │       ├── settings.css                    
-│   │       ├── general-tab.css                
-│   │       └── permission-tab.css             
+│   │       ├── settings-style.css                    
+│   │       ├── general-tab-style.css                
+│   │       └── permission-tab-style.css             
 │   ├── js/
 │   │   ├── lib/
 │   │   │   ├── bootstrap.min.js
@@ -19,9 +19,9 @@ wilayah-indonesia/
 │   │   │   └── jquery.min.js
 │   │   ├── province.js
 │   │   └── settings/
-│   │       ├── settings.js                    
-│   │       ├── general-tab.js                 
-│   │       └── permission-tab.js
+│   │       ├── settings-script.js                    
+│   │       ├── general-tab-script.js                 
+│   │       └── permission-tab-script.js
 │   └── img/
 ├── includes/
 │   ├── class-activator.php
@@ -37,11 +37,11 @@ wilayah-indonesia/
 │   │       ├── SettingsTabController.php    # Abstract class untuk tab
 │   │       └── TabControllers.php           # Semua tab controller dalam satu file
 │   ├── Models/
-│   │   ├── Province.php
-│   │   ├── Regency.php
+│   │   ├── ProvinceModel.php
+│   │   ├── RegencyModel.php
 │   │   └── Settings/
-│   │       ├── Settings.php                 # Model untuk settings umum
-│   │       └── PermissionManager.php        # Khusus menangani WordPress capabilities
+│   │       ├── SettingsModel.php                 # Model untuk settings umum
+│   │       └── PermissionManagerModel.php        # Khusus menangani WordPress capabilities
 │   ├── Views/
 │   │   ├── templates/
 │   │   │   ├── settings/

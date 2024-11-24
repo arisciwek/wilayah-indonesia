@@ -1,5 +1,3 @@
-class-deactivator.php
-
 <?php
 /**
  * File: class-deactivator.php

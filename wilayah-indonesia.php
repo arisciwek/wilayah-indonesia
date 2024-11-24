@@ -9,10 +9,13 @@
  */
 
 defined('ABSPATH') || exit;
+define('WILAYAH_INDONESIA_VERSION', '1.0.0');
 
 class WilayahIndonesia {
     private static $instance = null;
     private $loader;
+    private $plugin_name;
+    private $version;
     
     public static function getInstance() {
         if (null === self::$instance) {
@@ -21,33 +24,37 @@ class WilayahIndonesia {
         return self::$instance;
     }
 
-    private function __construct() {
-        $this->defineConstants();
-        $this->includeDependencies();
-        $this->initHooks();
-    }
-
     private function defineConstants() {
-        define('WILAYAH_INDONESIA_VERSION', '1.0.0');
         define('WILAYAH_INDONESIA_FILE', __FILE__);
         define('WILAYAH_INDONESIA_PATH', plugin_dir_path(__FILE__));
         define('WILAYAH_INDONESIA_URL', plugin_dir_url(__FILE__));
+    }
+
+    private function __construct() {
+        $this->plugin_name = 'wilayah-indonesia'; 
+        $this->version = WILAYAH_INDONESIA_VERSION;
+
+        $this->defineConstants();
+        $this->includeDependencies();
+        $this->initHooks();
     }
 
     private function includeDependencies() {
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-loader.php';
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-activator.php';
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-deactivator.php';
-        
-        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/MenuManager.php';
-        
-        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/Settings/SettingsController.php';
-        new SettingsController();
 
+        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/Settings/SettingsDependencyController.php';
+        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/Settings/SettingsController.php';        
+        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/MenuManager.php';
+        require_once WILAYAH_INDONESIA_PATH . 'src/Models/Settings/SettingsModel.php';
+        require_once WILAYAH_INDONESIA_PATH . 'src/Models/Settings/PermissionModel.php';
+
+        new \WilayahIndonesia\Controllers\Settings\SettingsController();
 
         $this->loader = new Wilayah_Indonesia_Loader();
     }
-
+    
     private function initHooks() {
         register_activation_hook(__FILE__, array('Wilayah_Indonesia_Activator', 'activate'));
         register_deactivation_hook(__FILE__, array('Wilayah_Indonesia_Deactivator', 'deactivate'));
@@ -69,4 +76,4 @@ function wilayah_indonesia() {
 
 // Start the plugin
 wilayah_indonesia()->run();
-
+    

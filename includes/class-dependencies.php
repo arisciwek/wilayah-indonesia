@@ -37,7 +37,7 @@ class Wilayah_Indonesia_Dependencies {
         );
 
         // Local styles - hanya jika file ada
-        if (file_exists(WILAYAH_INDONESIA_PATH . 'assets/css/province.css')) {
+        if (file_exists(WILAYAH_INDONESIA_PATH . 'assets/css/province-style.css')) {
             wp_enqueue_style(
                 $this->plugin_name,
                 WILAYAH_INDONESIA_URL . 'assets/css/province.css',
@@ -47,7 +47,7 @@ class Wilayah_Indonesia_Dependencies {
             );
         }
 
-        wp_enqueue_style('wilayah-settings', WILAYAH_INDONESIA_URL . 'assets/css/settings/settings.css');
+        wp_enqueue_style('wilayah-settings', WILAYAH_INDONESIA_URL . 'assets/css/settings/settings-style.css');
     }
 
     public function enqueue_scripts() {
@@ -72,10 +72,10 @@ class Wilayah_Indonesia_Dependencies {
         );
 
         // Local script - hanya jika file ada
-        if (file_exists(WILAYAH_INDONESIA_PATH . 'assets/js/province.js')) {
+        if (file_exists(WILAYAH_INDONESIA_PATH . 'assets/js/province-script.js')) {
             wp_enqueue_script(
                 $this->plugin_name,
-                WILAYAH_INDONESIA_URL . 'assets/js/province.js',
+                WILAYAH_INDONESIA_URL . 'assets/js/province-script.js',
                 array('jquery'),
                 $this->version,
                 true
@@ -87,6 +87,6 @@ class Wilayah_Indonesia_Dependencies {
             ));
         }
 
-        wp_enqueue_script('wilayah-settings', WILAYAH_INDONESIA_URL . 'assets/js/settings/settings.js');
+        wp_enqueue_script('wilayah-settings', WILAYAH_INDONESIA_URL . 'assets/js/settings/settings-script.js');
     }
 }
