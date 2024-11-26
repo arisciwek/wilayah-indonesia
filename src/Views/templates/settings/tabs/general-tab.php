@@ -19,7 +19,16 @@
 defined('ABSPATH') || exit;
 
 // Get current settings
-$options = $settings;
+
+$default_options = [
+    'records_per_page' => 15,
+    'enable_caching' => true,
+    'cache_duration' => 43200,
+    'datatables_language' => 'id'
+];
+
+$options = wp_parse_args($settings, $default_options);
+
 ?>
 
 <div class="wilayah-settings-tab general-settings">

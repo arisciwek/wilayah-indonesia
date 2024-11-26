@@ -1,93 +1,242 @@
 <?php
 /**
- * File: src/Models/Settings/PermissionModel.php
- * Version: 1.0.0
- * Last Updated: 2024-11-24 11:00:00
- * Description: Handles plugin permission management and role capabilities
+ * File: PermissionModel.php
+ * Path: /wilayah-indonesia/src/Models/Settings/PermissionModel.php
+ * Description: Model untuk mengelola pengaturan hak akses dan role plugin Wilayah Indonesia
+ * Version: 1.1.0
+ * Last modified: 2024-11-25 06:20:00
+ * 
+ * Changelog:
+ * v1.1.0 - 2024-11-25
+ * - Added getRoleList method untuk mendapatkan daftar role yang tersedia
+ * - Added getPermissionList method untuk mendapatkan daftar permission
+ * - Fixed getPermissions untuk mengembalikan format yang sesuai
+ * - Updated validation logic 
+ * - Improved error handling
+ * - Added consistent return types
+ * - Added proper documentation
+ * 
+ * v1.0.0 - 2024-11-24
+ * - Initial release
  */
 
 namespace WilayahIndonesia\Models\Settings;
 
 class PermissionModel {
     /**
-     * Capability prefix for the plugin
+     * Nama opsi di database WordPress
      */
-    const CAP_PREFIX = 'wilayah_indonesia_';
+    private $option_name = 'wilayah_indonesia_permissions';
 
     /**
-     * Default capabilities array
+     * Default hak akses per role
      */
-    private $default_capabilities = array(
-        'manage_settings' => array(
-            'display_name' => 'Manage Plugin Settings',
-            'roles' => array('administrator')
-        ),
-        'view_data' => array(
-            'display_name' => 'View Regional Data',
-            'roles' => array('administrator', 'editor', 'author')
-        ),
-        'edit_data' => array(
-            'display_name' => 'Edit Regional Data',
-            'roles' => array('administrator', 'editor')
-        ),
-        'delete_data' => array(
-            'display_name' => 'Delete Regional Data',
-            'roles' => array('administrator')
-        ),
-        'import_data' => array(
-            'display_name' => 'Import Regional Data',
-            'roles' => array('administrator')
-        ),
-        'export_data' => array(
-            'display_name' => 'Export Regional Data',
-            'roles' => array('administrator', 'editor')
-        )
-    );
+    private $default_permissions = [
+        'administrator' => [
+            'manage_wilayah' => true,
+            'view_wilayah' => true,
+            'edit_wilayah' => true,
+            'delete_wilayah' => true,
+            'manage_settings' => true
+        ],
+        'editor' => [
+            'view_wilayah' => true,
+            'edit_wilayah' => true
+        ],
+        'author' => [
+            'view_wilayah' => true
+        ],
+        'contributor' => [
+            'view_wilayah' => true
+        ],
+        'subscriber' => [
+            'view_wilayah' => true
+        ]
+    ];
 
     /**
-     * Stored capabilities in database
+     * Daftar kemampuan yang tersedia
      */
-    private $capabilities;
+    private $capabilities = [
+        'manage_wilayah' => 'Mengelola Wilayah',
+        'view_wilayah' => 'Lihat Wilayah',
+        'edit_wilayah' => 'Edit Wilayah',
+        'delete_wilayah' => 'Hapus Wilayah',
+        'manage_settings' => 'Kelola Pengaturan'
+    ];
 
     /**
-     * Constructor
+     * Get all permissions with roles and capabilities
+     * Required by SettingsController
      */
-    public function __construct() {
-        $this->capabilities = get_option('wilayah_indonesia_capabilities', array());
-        
-        if (empty($this->capabilities)) {
-            $this->initialize_capabilities();
+    public function getPermissions(): array {
+        $roles = $this->getRoleList();
+        $permissions = $this->getSavedPermissions();
+        $result = [];
+
+        foreach ($roles as $role_id => $role_name) {
+            $role_permissions = isset($permissions[$role_id]) 
+                ? $permissions[$role_id] 
+                : $this->getDefaultPermissions($role_id);
+
+            $result[$role_id] = [
+                'name' => $role_name,
+                'permissions' => $role_permissions,
+                'capabilities' => $this->getCapabilitiesForRole($role_id)
+            ];
         }
+
+        return $result;
     }
 
     /**
-     * Initialize default capabilities
+     * Get saved permissions from database
      */
-    public function initialize_capabilities() {
-        $this->capabilities = $this->default_capabilities;
-        $this->assign_capabilities_to_roles();
-        $this->save_capabilities();
+    private function getSavedPermissions(): array {
+        return wp_parse_args(
+            get_option($this->option_name, []),
+            $this->default_permissions
+        );
     }
 
     /**
-     * Assign capabilities to WordPress roles
+     * Get default permissions for a role
      */
-    private function assign_capabilities_to_roles() {
-        foreach ($this->capabilities as $capability => $config) {
-            $full_cap = self::CAP_PREFIX . $capability;
+    private function getDefaultPermissions(string $role): array {
+        return isset($this->default_permissions[$role]) 
+            ? $this->default_permissions[$role] 
+            : ['view_wilayah' => true];
+    }
+
+    /**
+     * Get all capabilities for a role
+     */
+    private function getCapabilitiesForRole(string $role): array {
+        $wp_role = get_role($role);
+        if (!$wp_role) {
+            return [];
+        }
+
+        $caps = [];
+        foreach ($this->capabilities as $cap_key => $cap_label) {
+            $caps[$cap_key] = $wp_role->has_cap($cap_key);
+        }
+
+        return $caps;
+    }
+
+    /**
+     * Get list of WordPress roles
+     */
+    public function getRoleList(): array {
+        global $wp_roles;
+        
+        if (!isset($wp_roles)) {
+            $wp_roles = new \WP_Roles();
+        }
+
+        return $wp_roles->get_names();
+    }
+
+    /**
+     * Get list of available capabilities with labels
+     */
+    public function getPermissionList(): array {
+        return $this->capabilities;
+    }
+
+    /**
+     * Get permissions for specific role
+     */
+    public function getRolePermissions(string $role): array {
+        $permissions = $this->getSavedPermissions();
+        return isset($permissions[$role]) ? $permissions[$role] : [];
+    }
+
+    /**
+     * Get available roles
+     */
+    public function getRoles(): array {
+        global $wp_roles;
+        
+        if (!isset($wp_roles)) {
+            $wp_roles = new \WP_Roles();
+        }
+
+        return $wp_roles->get_names();
+    }
+
+    /**
+     * Get available capabilities
+     */
+    public function getCapabilities(): array {
+        return $this->capabilities;
+    }
+
+    /**
+     * Save permission settings
+     */
+    public function savePermissions(array $permissions): bool {
+        if (!is_array($permissions)) {
+            return false;
+        }
+
+        $sanitized = [];
+        foreach ($permissions as $role => $caps) {
+            $role = sanitize_key($role);
+            $sanitized[$role] = [];
             
-            // First remove capability from all roles
-            $roles = \wp_roles();
-            foreach ($roles->role_objects as $role) {
-                $role->remove_cap($full_cap);
+            foreach ($this->capabilities as $cap_key => $cap_label) {
+                if (isset($caps[$cap_key])) {
+                    $sanitized[$role][$cap_key] = (bool) $caps[$cap_key];
+                }
             }
+        }
 
-            // Then assign to specified roles
-            if (!empty($config['roles'])) {
-                foreach ($config['roles'] as $role_name) {
-                    $role = get_role($role_name);
-                    if ($role) {
-                        $role->add_cap($full_cap);
+        return update_option($this->option_name, $sanitized);
+    }
+
+    /**
+     * Save role settings
+     */
+    public function saveRoles(array $roles): bool {
+        if (!is_array($roles)) {
+            return false;
+        }
+
+        global $wp_roles;
+        if (!isset($wp_roles)) {
+            $wp_roles = new \WP_Roles();
+        }
+
+        foreach ($roles as $role_name => $capabilities) {
+            $role = get_role($role_name);
+            if ($role) {
+                foreach ($this->capabilities as $cap_key => $cap_label) {
+                    if (isset($capabilities[$cap_key])) {
+                        $role->add_cap($cap_key);
+                    } else {
+                        $role->remove_cap($cap_key);
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Add capabilities to roles on plugin activation
+     */
+    public function addCapabilities(): void {
+        $permissions = $this->getSavedPermissions();
+        
+        foreach ($permissions as $role_name => $caps) {
+            $role = get_role($role_name);
+            if ($role) {
+                foreach ($caps as $cap_key => $allowed) {
+                    if ($allowed) {
+                        $role->add_cap($cap_key);
                     }
                 }
             }
@@ -95,135 +244,23 @@ class PermissionModel {
     }
 
     /**
-     * Save capabilities to database
+     * Remove capabilities from roles on plugin deactivation
      */
-    private function save_capabilities() {
-        update_option('wilayah_indonesia_capabilities', $this->capabilities);
-    }
-
-    /**
-     * Get all capabilities
-     */
-    public function get_capabilities() {
-        return $this->capabilities;
-    }
-
-    /**
-     * Get specific capability
-     */
-    public function get_capability($capability) {
-        return isset($this->capabilities[$capability]) ? $this->capabilities[$capability] : null;
-    }
-
-    /**
-     * Update capability configuration
-     */
-    public function update_capability($capability, $config) {
-        if (!isset($this->capabilities[$capability])) {
-            return false;
+    public function removeCapabilities(): void {
+        global $wp_roles;
+        
+        if (!isset($wp_roles)) {
+            $wp_roles = new \WP_Roles();
         }
 
-        $this->capabilities[$capability] = wp_parse_args($config, $this->capabilities[$capability]);
-        $this->assign_capabilities_to_roles();
-        $this->save_capabilities();
-
-        return true;
-    }
-
-    /**
-     * Check if user has capability
-     */
-    public function current_user_can($capability) {
-        return current_user_can(self::CAP_PREFIX . $capability);
-    }
-
-    /**
-     * Check if role has capability
-     */
-    public function role_has_capability($role_name, $capability) {
-        $role = get_role($role_name);
-        if (!$role) {
-            return false;
-        }
-
-        return $role->has_cap(self::CAP_PREFIX . $capability);
-    }
-
-    /**
-     * Get available WordPress roles
-     */
-    public function get_available_roles() {
-        $roles = array();
-        foreach (wp_roles()->role_objects as $role_name => $role) {
-            $roles[$role_name] = array(
-                'name' => translate_user_role($role->name),
-                'capabilities' => array()
-            );
-
-            foreach ($this->capabilities as $capability => $config) {
-                $roles[$role_name]['capabilities'][$capability] = $this->role_has_capability($role_name, $capability);
+        foreach ($wp_roles->roles as $role_name => $role_info) {
+            $role = get_role($role_name);
+            if ($role) {
+                foreach ($this->capabilities as $cap_key => $cap_label) {
+                    $role->remove_cap($cap_key);
+                }
             }
         }
-        return $roles;
     }
-
-    /**
-     * Reset capabilities to default
-     */
-    public function reset_to_default() {
-        $this->capabilities = $this->default_capabilities;
-        $this->assign_capabilities_to_roles();
-        $this->save_capabilities();
-    }
-
-    /**
-     * Plugin activation handler
-     */
-    public function activate() {
-        $this->initialize_capabilities();
-    }
-
-    /**
-     * Plugin deactivation handler
-     */
-    public function deactivate() {
-        // Remove capabilities from all roles
-        $roles = wp_roles();
-        foreach ($this->capabilities as $capability => $config) {
-            $full_cap = self::CAP_PREFIX . $capability;
-            foreach ($roles->role_objects as $role) {
-                $role->remove_cap($full_cap);
-            }
-        }
-
-        // Clean up options
-        delete_option('wilayah_indonesia_capabilities');
-    }
-
-    /**
-     * Get required capability for specific action
-     */
-    public static function get_required_capability($action) {
-        $capability_map = array(
-            'view' => 'view_data',
-            'edit' => 'edit_data',
-            'delete' => 'delete_data',
-            'import' => 'import_data',
-            'export' => 'export_data',
-            'settings' => 'manage_settings'
-        );
-
-        return isset($capability_map[$action]) ? self::CAP_PREFIX . $capability_map[$action] : null;
-    }
-
-    /**
-     * Validate user access
-     */
-    public static function validate_access($action) {
-        $capability = self::get_required_capability($action);
-        if (!$capability || !current_user_can($capability)) {
-            wp_die(__('You do not have sufficient permissions to access this page.', 'wilayah-indonesia'));
-        }
-        return true;
-    }
+    
 }

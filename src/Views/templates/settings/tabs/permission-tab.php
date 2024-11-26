@@ -2,155 +2,220 @@
 /**
  * File: permission-tab.php
  * Path: /wilayah-indonesia/src/Views/templates/settings/tabs/permission-tab.php
- * Description: Template untuk pengaturan hak akses per role
- * Version: 1.0.0
- * Last modified: 2024-11-25 06:25:00
- * 
- * Changelog:
- * v1.0.0 - 2024-11-25
- * - Initial version
- * - Add role capabilities matrix
- * - Add AJAX-based save functionality
- * - Add responsive table layout
- * - Add role-based permission settings
+ * Description: Template untuk tab permission di halaman settings
+ * Version: 1.2.0
+ * Last modified: 2024-11-25
  */
 
 // Prevent direct access
 defined('ABSPATH') || exit;
+
+// Ensure we have the required data
+if (!isset($permissions) || !is_array($permissions)) {
+    return;
+}
 ?>
 
-<div class="wilayah-settings-tab permissions-settings">
-    <div class="tablenav top">
-        <div class="alignleft actions">
-            <button type="button" class="button action save-permissions">
-                <?php _e('Simpan Perubahan', 'wilayah-indonesia'); ?>
-            </button>
-        </div>
-        <br class="clear">
-    </div>
+<div class="wrap">
+    <div class="wilayah-permissions-wrapper">
+        <form id="wilayah-permissions-form">
+            <?php wp_nonce_field('wilayah_settings_nonce'); ?>
+            
+            <!-- Matrix Header -->
+            <div class="permissions-matrix">
+                <table class="wp-list-table widefat fixed striped">
+                    <thead>
+                        <tr>
+                            <th class="column-role"><?php _e('Role', 'wilayah-indonesia'); ?></th>
+                            <th class="column-permission"><?php _e('Melihat Daftar', 'wilayah-indonesia'); ?></th>
+                            <th class="column-permission"><?php _e('Melihat Detail', 'wilayah-indonesia'); ?></th>
+                            <th class="column-permission"><?php _e('Menambah', 'wilayah-indonesia'); ?></th>
+                            <th class="column-permission"><?php _e('Mengubah', 'wilayah-indonesia'); ?></th>
+                            <th class="column-permission"><?php _e('Menghapus', 'wilayah-indonesia'); ?></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php 
+                        foreach ($permissions as $role_id => $role_data): 
+                            $is_admin = $role_id === 'administrator';
+                        ?>
+                            <tr>
+                                <td class="column-role">
+                                    <strong><?php echo esc_html($role_data['name']); ?></strong>
+                                </td>
+                                
+                                <!-- View List Permission -->
+                                <td class="column-permission">
+                                    <input type="checkbox" 
+                                           name="permissions[<?php echo esc_attr($role_id); ?>][view_province_list]" 
+                                           <?php checked(true, $role_data['permissions']['view_province_list'] ?? false); ?>
+                                           <?php disabled($is_admin, true); ?>>
+                                </td>
+                                
+                                <!-- View Detail Permission -->
+                                <td class="column-permission">
+                                    <input type="checkbox" 
+                                           name="permissions[<?php echo esc_attr($role_id); ?>][view_province]" 
+                                           <?php checked(true, $role_data['permissions']['view_province'] ?? false); ?>
+                                           <?php disabled($is_admin, true); ?>>
+                                </td>
+                                
+                                <!-- Create Permission -->
+                                <td class="column-permission">
+                                    <input type="checkbox" 
+                                           name="permissions[<?php echo esc_attr($role_id); ?>][create_province]" 
+                                           <?php checked(true, $role_data['permissions']['create_province'] ?? false); ?>
+                                           <?php disabled($is_admin, true); ?>>
+                                </td>
+                                
+                                <!-- Edit Permission -->
+                                <td class="column-permission">
+                                    <input type="checkbox" 
+                                           name="permissions[<?php echo esc_attr($role_id); ?>][edit_province]" 
+                                           <?php checked(true, $role_data['permissions']['edit_province'] ?? false); ?>
+                                           <?php disabled($is_admin, true); ?>>
+                                </td>
+                                
+                                <!-- Delete Permission -->
+                                <td class="column-permission">
+                                    <input type="checkbox" 
+                                           name="permissions[<?php echo esc_attr($role_id); ?>][delete_province]" 
+                                           <?php checked(true, $role_data['permissions']['delete_province'] ?? false); ?>
+                                           <?php disabled($is_admin, true); ?>>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
 
-    <table class="wp-list-table widefat fixed striped permissions-table">
-        <thead>
-            <tr>
-                <th scope="col" class="column-role"><?php _e('Role', 'wilayah-indonesia'); ?></th>
-                <?php foreach ($capabilities as $cap_name => $cap_label): ?>
-                    <th scope="col" class="column-capability">
-                        <?php echo esc_html($cap_label); ?>
-                        <span class="tooltip" title="<?php echo esc_attr($this->getCapabilityDescription($cap_name)); ?>">
-                            <span class="dashicons dashicons-info"></span>
-                        </span>
-                    </th>
-                <?php endforeach; ?>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($roles as $role_name => $role_display_name): ?>
-                <tr>
-                    <th scope="row" class="column-role">
-                        <?php echo esc_html($role_display_name); ?>
-                        <?php if ($role_name === 'administrator'): ?>
-                            <br><small><?php _e('(Full Access)', 'wilayah-indonesia'); ?></small>
-                        <?php endif; ?>
-                    </th>
-                    <?php foreach ($capabilities as $cap_name => $cap_label): 
-                        $is_checked = isset($permissions[$role_name][$cap_name]) && $permissions[$role_name][$cap_name];
-                        $is_disabled = $role_name === 'administrator';
-                    ?>
-                        <td class="column-capability">
-                            <label class="screen-reader-text" 
-                                   for="<?php echo esc_attr("cap_{$role_name}_{$cap_name}"); ?>">
-                                <?php echo esc_html(sprintf(
-                                    __('Grant %1$s capability to %2$s role', 'wilayah-indonesia'),
-                                    $cap_label,
-                                    $role_display_name
-                                )); ?>
-                            </label>
-                            <input type="checkbox" 
-                                   id="<?php echo esc_attr("cap_{$role_name}_{$cap_name}"); ?>"
-                                   name="permissions[<?php echo esc_attr($role_name); ?>][<?php echo esc_attr($cap_name); ?>]"
-                                   value="1"
-                                   <?php checked($is_checked); ?>
-                                   <?php disabled($is_disabled); ?>>
-                        </td>
-                    <?php endforeach; ?>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-
-    <div class="tablenav bottom">
-        <div class="alignleft actions">
-            <button type="button" class="button action save-permissions">
-                <?php _e('Simpan Perubahan', 'wilayah-indonesia'); ?>
-            </button>
-        </div>
-        <br class="clear">
+            <p class="submit">
+                <button type="submit" class="button button-primary" id="save-permissions">
+                    <?php _e('Simpan Perubahan', 'wilayah-indonesia'); ?>
+                </button>
+                <span class="spinner"></span>
+            </p>
+        </form>
     </div>
 </div>
 
-<script type="text/javascript">
+<style>
+.wilayah-permissions-wrapper {
+    margin: 20px 0;
+}
+
+.wilayah-permissions-wrapper .permissions-matrix {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin-bottom: 20px;
+}
+
+.wilayah-permissions-wrapper table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.wilayah-permissions-wrapper th {
+    font-weight: 600;
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ccd0d4;
+}
+
+.wilayah-permissions-wrapper td {
+    padding: 8px;
+    vertical-align: middle;
+}
+
+.wilayah-permissions-wrapper .column-role {
+    width: 200px;
+}
+
+.wilayah-permissions-wrapper .column-permission {
+    text-align: center;
+}
+
+.wilayah-permissions-wrapper .spinner {
+    float: none;
+    margin: 4px 10px;
+}
+
+/* Improve checkbox visibility */
+.wilayah-permissions-wrapper input[type="checkbox"] {
+    margin: 0;
+}
+
+.wilayah-permissions-wrapper input[type="checkbox"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Add hover effect */
+.wilayah-permissions-wrapper tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Style submit button area */
+.wilayah-permissions-wrapper .submit {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+</style>
+
+<script>
 jQuery(document).ready(function($) {
-    $('.save-permissions').on('click', function(e) {
+    const $form = $('#wilayah-permissions-form');
+    const $submitButton = $('#save-permissions');
+    const $spinner = $form.find('.spinner');
+
+    $form.on('submit', function(e) {
         e.preventDefault();
         
-        const $button = $(this);
-        const $form = $('.permissions-table');
-        
-        // Disable button and show loading state
-        $button.prop('disabled', true)
-               .html('<span class="spinner is-active"></span> Menyimpan...');
+        $submitButton.prop('disabled', true);
+        $spinner.addClass('is-active');
 
-        // Collect permissions data
-        const permissions = {};
-        $form.find('input[type="checkbox"]').each(function() {
-            const $cb = $(this);
-            const name = $cb.attr('name');
-            const matches = name.match(/permissions\[([^\]]+)\]\[([^\]]+)\]/);
-            
-            if (matches) {
-                const role = matches[1];
-                const cap = matches[2];
-                
-                if (!permissions[role]) {
-                    permissions[role] = {};
+        const formData = {};
+        $(this).find('input[type="checkbox"]').each(function() {
+            const $checkbox = $(this);
+            const name = $checkbox.attr('name');
+            if (name) {
+                const matches = name.match(/permissions\[(.*?)\]\[(.*?)\]/);
+                if (matches) {
+                    const role = matches[1];
+                    const cap = matches[2];
+                    if (!formData[role]) {
+                        formData[role] = {};
+                    }
+                    formData[role][cap] = $checkbox.is(':checked');
                 }
-                permissions[role][cap] = $cb.is(':checked');
             }
         });
 
-        // Send AJAX request
         $.ajax({
             url: ajaxurl,
             type: 'POST',
             data: {
                 action: 'save_permissions',
                 nonce: wilayahSettings.nonce,
-                permissions: permissions
+                permissions: formData
             },
             success: function(response) {
                 if (response.success) {
-                    irToast.success(response.data);
+                    irToast.success(response.data || wilayahSettings.strings.saved);
                 } else {
-                    irToast.error(response.data);
+                    irToast.error(response.data || wilayahSettings.strings.saveError);
                 }
             },
             error: function() {
                 irToast.error(wilayahSettings.strings.saveError);
             },
             complete: function() {
-                // Reset button state
-                $button.prop('disabled', false)
-                       .text(wilayahSettings.strings.saveChanges);
+                $submitButton.prop('disabled', false);
+                $spinner.removeClass('is-active');
             }
         });
-    });
-
-    // Initialize tooltips
-    $('.tooltip').tipTip({
-        defaultPosition: 'top',
-        fadeIn: 50,
-        fadeOut: 50,
-        delay: 200
     });
 });
 </script>
