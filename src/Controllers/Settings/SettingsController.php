@@ -122,6 +122,67 @@ class SettingsController {
                 return [];
         }
     }
+    /**
+     * Handle AJAX request untuk menyimpan pengaturan permission
+     */
+    public function handlePermissionsSave() {
+        // Ganti ini
+        check_ajax_referer('wilayah_settings_nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Anda tidak memiliki izin untuk ini.', 'wilayah-indonesia'));
+            return;
+        }
+
+        $permissions = isset($_POST['permissions']) ? $_POST['permissions'] : [];
+        
+        // Tambahkan validasi data
+        if (empty($permissions) || !is_array($permissions)) {
+            wp_send_json_error(__('Data permission tidak valid.', 'wilayah-indonesia'));
+            return;
+    }
+
+    $result = $this->permission_model->savePermissions($permissions);
+
+    if ($result) {
+        wp_send_json_success(__('Hak akses berhasil disimpan.', 'wilayah-indonesia'));
+    } else {
+        wp_send_json_error(__('Gagal menyimpan hak akses.', 'wilayah-indonesia'));
+    }
+}
+
+
+    /**
+     * Handle AJAX request untuk menyimpan pengaturan role
+     */
+    public function handleRolesSave() {
+        check_ajax_referer('wilayah_settings_nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(__('Anda tidak memiliki izin untuk ini.', 'wilayah-indonesia'));
+        }
+
+        $roles = isset($_POST['roles']) ? $_POST['roles'] : [];
+        
+        // Sanitize roles data
+        $sanitized_roles = [];
+        foreach ($roles as $role => $data) {
+            $role = sanitize_key($role);
+            $sanitized_roles[$role] = [
+                'name' => sanitize_text_field($data['name'] ?? ''),
+                'capabilities' => array_map('boolval', $data['capabilities'] ?? [])
+            ];
+        }
+
+        // Save roles using the model
+        $result = $this->permission_model->saveRoles($sanitized_roles);
+
+        if ($result) {
+            wp_send_json_success(__('Role berhasil disimpan.', 'wilayah-indonesia'));
+        } else {
+            wp_send_json_error(__('Gagal menyimpan role.', 'wilayah-indonesia'));
+        }
+    }
 
     public function handleAjaxSave() {
         check_ajax_referer('wilayah_settings_nonce', 'nonce');

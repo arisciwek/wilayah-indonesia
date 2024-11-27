@@ -56,12 +56,6 @@ class SettingsDependencyController {
         }
 
         // CSS
-        wp_enqueue_style(
-            $this->plugin_name . '-settings-style',
-            WILAYAH_INDONESIA_URL . 'assets/css/settings/settings-style.css',
-            [],
-            $this->version
-        );
         
         wp_enqueue_style(
             $this->plugin_name . '-general-tab',
@@ -70,41 +64,18 @@ class SettingsDependencyController {
             $this->version
         );
 
-        // JS Dependencies
-        wp_enqueue_script('jquery');
-        wp_enqueue_script('jquery-ui-tabs');
-
-        wp_enqueue_script(
-            $this->plugin_name . '-settings-script',
-            WILAYAH_INDONESIA_URL . 'assets/js/settings/settings-script.js',
-            ['jquery', 'jquery-ui-tabs'],
-            $this->version,
-            true
-        );
-
         wp_enqueue_style(
             $this->plugin_name . '-permission-tab',
             WILAYAH_INDONESIA_URL . 'assets/css/settings/permission-tab-style.css',
             [],
             $this->version
         );
-        
-        // Localize
-        wp_localize_script(
-            $this->plugin_name . '-settings-script',
-            'wilayahSettings',
-            [
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('wilayah_settings_nonce'),
-                'strings' => [
-                    'saved' => __('Pengaturan berhasil disimpan.', 'wilayah-indonesia'),
-                    'saveError' => __('Gagal menyimpan pengaturan.', 'wilayah-indonesia'),
-                    'pleaseWait' => __('Mohon tunggu...', 'wilayah-indonesia'),
-                    'error' => __('Terjadi kesalahan.', 'wilayah-indonesia')
-                ],
-                'debug' => defined('WP_DEBUG') && WP_DEBUG,
-                'version' => $this->version
-            ]
+
+        wp_enqueue_style(
+            $this->plugin_name . '-settings-style',
+            WILAYAH_INDONESIA_URL . 'assets/css/settings/settings-style.css',
+            [],
+            $this->version
         );
 
         // Toast fallback if needed
@@ -117,6 +88,41 @@ class SettingsDependencyController {
                 true
             );
         }
+
+        // JS Dependencies
+        wp_enqueue_script('jquery');
+        wp_enqueue_script('jquery-ui-tabs');
+
+        wp_enqueue_script(
+            $this->plugin_name . '-permissions-script',
+            WILAYAH_INDONESIA_URL . 'assets/js/settings/permissions-script.js',
+            ['jquery', 'ir-toast'],
+            $this->version,
+            true
+        );
+        wp_enqueue_script(
+            $this->plugin_name . '-settings-script',
+            WILAYAH_INDONESIA_URL . 'assets/js/settings/settings-script.js',
+            ['jquery', 'jquery-ui-tabs'],
+            $this->version,
+            true
+        );
+
+        // Localize// Di SettingsDependencyController.php
+        wp_localize_script(
+            $this->plugin_name . '-settings-script',
+            'wilayahSettings',
+            [
+                'nonce' => wp_create_nonce('wilayah_settings_nonce'),
+                'strings' => [
+                    'saved' => __('Pengaturan berhasil disimpan.', 'wilayah-indonesia'),
+                    'saveError' => __('Gagal menyimpan pengaturan.', 'wilayah-indonesia'),
+                    'permissionSaved' => __('Hak akses berhasil disimpan.', 'wilayah-indonesia'),
+                    'permissionError' => __('Gagal menyimpan hak akses.', 'wilayah-indonesia'),
+                    'unauthorized' => __('Anda tidak memiliki izin untuk ini.', 'wilayah-indonesia')
+                ]
+            ]
+        );
     }
 
     private function get_asset_version() {

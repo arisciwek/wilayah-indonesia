@@ -1,0 +1,126 @@
+/* File: assets/css/settings/permissions.css */
+
+.permissions-matrix {
+    margin: 20px 0;
+}
+
+.permissions-matrix table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+}
+
+.permissions-matrix th {
+    background: #f5f5f5;
+    padding: 8px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.permissions-matrix td {
+    padding: 8px;
+    vertical-align: middle;
+    border-bottom: 1px solid #e5e5e5;
+}
+
+.permissions-matrix tr:hover {
+    background: #f9f9f9;
+}
+
+.required-capability {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.has-capability {
+    background-color: #f0f7ff;
+}
+
+.bulk-actions {
+    margin: 10px 0;
+}
+
+.role-heading {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #23282d;
+}
+
+.capability-description {
+    color: #666;
+    font-size: 0.9em;
+    margin-top: 2px;
+}
+
+.capability-group {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #e5e5e5;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+}
+
+
+.wilayah-permissions-wrapper {
+    margin: 20px 0;
+}
+
+.wilayah-permissions-wrapper .permissions-matrix {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0,0,0,.04);
+    margin-bottom: 20px;
+}
+
+.wilayah-permissions-wrapper table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.wilayah-permissions-wrapper th {
+    font-weight: 600;
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid #ccd0d4;
+}
+
+.wilayah-permissions-wrapper td {
+    padding: 8px;
+    vertical-align: middle;
+}
+
+.wilayah-permissions-wrapper .column-role {
+    width: 200px;
+}
+
+.wilayah-permissions-wrapper .column-permission {
+    text-align: center;
+}
+
+.wilayah-permissions-wrapper .spinner {
+    float: none;
+    margin: 4px 10px;
+}
+
+/* Improve checkbox visibility */
+.wilayah-permissions-wrapper input[type="checkbox"] {
+    margin: 0;
+}
+
+.wilayah-permissions-wrapper input[type="checkbox"]:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Add hover effect */
+.wilayah-permissions-wrapper tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+/* Style submit button area */
+.wilayah-permissions-wrapper .submit {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
