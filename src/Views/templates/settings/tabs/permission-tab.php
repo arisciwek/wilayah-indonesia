@@ -36,8 +36,6 @@ if (!isset($permissions) || !is_array($permissions)) {
                         <?php 
                             foreach ($permissions as $role_id => $role_data): 
                                 $is_admin = $role_id === 'administrator';
-                                // Administrator selalu memiliki semua permissions
-                                $has_permission = $is_admin ? true : ($role_data['permissions'][$permission] ?? false);
                             ?>
                                 <tr>
                                     <td class="column-role">
@@ -48,7 +46,7 @@ if (!isset($permissions) || !is_array($permissions)) {
                                     <td class="column-permission">
                                         <input type="checkbox" 
                                                name="permissions[<?php echo esc_attr($role_id); ?>][view_province_list]" 
-                                               <?php checked($is_admin || ($role_data['permissions']['view_province_list'] ?? false), true); ?>
+                                               <?php checked($is_admin ? true : ($role_data['permissions']['view_province_list'] ?? false), true); ?>
                                                <?php disabled($is_admin, true); ?>>
                                     </td>
                                     
@@ -56,7 +54,7 @@ if (!isset($permissions) || !is_array($permissions)) {
                                     <td class="column-permission">
                                         <input type="checkbox" 
                                                name="permissions[<?php echo esc_attr($role_id); ?>][view_province]" 
-                                               <?php checked($is_admin || ($role_data['permissions']['view_province'] ?? false), true); ?>
+                                               <?php checked($is_admin ? true : ($role_data['permissions']['view_province'] ?? false), true); ?>
                                                <?php disabled($is_admin, true); ?>>
                                     </td>
                                     
@@ -64,7 +62,7 @@ if (!isset($permissions) || !is_array($permissions)) {
                                     <td class="column-permission">
                                         <input type="checkbox" 
                                                name="permissions[<?php echo esc_attr($role_id); ?>][create_province]" 
-                                               <?php checked($is_admin || ($role_data['permissions']['create_province'] ?? false), true); ?>
+                                               <?php checked($is_admin ? true : ($role_data['permissions']['create_province'] ?? false), true); ?>
                                                <?php disabled($is_admin, true); ?>>
                                     </td>
                                     
@@ -72,7 +70,7 @@ if (!isset($permissions) || !is_array($permissions)) {
                                     <td class="column-permission">
                                         <input type="checkbox" 
                                                name="permissions[<?php echo esc_attr($role_id); ?>][edit_province]" 
-                                               <?php checked($is_admin || ($role_data['permissions']['edit_province'] ?? false), true); ?>
+                                               <?php checked($is_admin ? true : ($role_data['permissions']['edit_province'] ?? false), true); ?>
                                                <?php disabled($is_admin, true); ?>>
                                     </td>
                                     
@@ -80,11 +78,12 @@ if (!isset($permissions) || !is_array($permissions)) {
                                     <td class="column-permission">
                                         <input type="checkbox" 
                                                name="permissions[<?php echo esc_attr($role_id); ?>][delete_province]" 
-                                               <?php checked($is_admin || ($role_data['permissions']['delete_province'] ?? false), true); ?>
+                                               <?php checked($is_admin ? true : ($role_data['permissions']['delete_province'] ?? false), true); ?>
                                                <?php disabled($is_admin, true); ?>>
                                     </td>
                                 </tr>
-                            <?php endforeach; ?>
+                            <?php endforeach; 
+                        ?>
                     </tbody>
                 </table>
             </div>

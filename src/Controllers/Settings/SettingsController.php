@@ -134,9 +134,6 @@ class SettingsController {
                 return;
             }
 
-            // Log the raw data
-            error_log('Raw POST data: ' . print_r($_POST, true));
-
             $permissions = isset($_POST['permissions']) ? $_POST['permissions'] : [];
             
             if (empty($permissions)) {
@@ -144,20 +141,15 @@ class SettingsController {
                 return;
             }
 
-            // Log the processed data
-            error_log('Processed permissions data: ' . print_r($permissions, true));
-
             $result = $this->permission_model->savePermissions($permissions);
             
             if ($result === false) {
                 wp_send_json_error('Gagal menyimpan ke database');
                 return;
             }
-
             wp_send_json_success('Hak akses berhasil disimpan.');
             
         } catch (\Exception $e) {
-            error_log('Permission save error: ' . $e->getMessage());
             wp_send_json_error('Terjadi kesalahan: ' . $e->getMessage());
         }
     }

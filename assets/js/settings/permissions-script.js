@@ -38,10 +38,6 @@ jQuery(document).ready(function($) {
                 }
             }
         });
-
-        // Tambahkan console.log untuk debug
-        console.log('Form Data:', formData);
-
         $.ajax({
             url: ajaxurl,
             type: 'POST',
@@ -51,7 +47,6 @@ jQuery(document).ready(function($) {
                 permissions: formData
             },
             success: function(response) {
-                console.log('Response:', response); // Tambahkan ini
                 if (response.success) {
                     irToast.success(wilayahSettings.strings.permissionSaved);
                 } else {
@@ -59,11 +54,6 @@ jQuery(document).ready(function($) {
                 }
             },
             error: function(xhr, status, error) {
-                console.log('Error details:', {
-                    error: error,
-                    status: status,
-                    response: xhr.responseText
-                });
                 irToast.error(wilayahSettings.strings.permissionError);
             },
             complete: function() {
