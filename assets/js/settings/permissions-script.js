@@ -38,27 +38,37 @@ jQuery(document).ready(function($) {
                 }
             }
         });
+
+        // Tambahkan console.log untuk debug
+        console.log('Form Data:', formData);
+
         $.ajax({
             url: ajaxurl,
             type: 'POST',
             data: {
                 action: 'save_permissions',
-                _wpnonce: wilayahSettings.nonce,
-                _wp_http_referer: $('input[name="_wp_http_referer"]').val(),
+                nonce: wilayahSettings.nonce,
                 permissions: formData
             },
             success: function(response) {
+                console.log('Response:', response); // Tambahkan ini
                 if (response.success) {
                     irToast.success(wilayahSettings.strings.permissionSaved);
                 } else {
-                    irToast.error(response.data || wilayahSettings.strings.permissionError);
+                    irToast.error(response.data);
                 }
             },
             error: function(xhr, status, error) {
-                console.log('Error:', error);
-                console.log('Status:', status);
-                console.log('Response:', xhr.responseText);
+                console.log('Error details:', {
+                    error: error,
+                    status: status,
+                    response: xhr.responseText
+                });
                 irToast.error(wilayahSettings.strings.permissionError);
+            },
+            complete: function() {
+                $submitButton.prop('disabled', false);
+                $spinner.removeClass('is-active');
             }
         });
     });

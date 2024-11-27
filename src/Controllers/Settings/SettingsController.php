@@ -126,31 +126,41 @@ class SettingsController {
      * Handle AJAX request untuk menyimpan pengaturan permission
      */
     public function handlePermissionsSave() {
-        // Ganti ini
-        check_ajax_referer('wilayah_settings_nonce');
-        
-        if (!current_user_can('manage_options')) {
-            wp_send_json_error(__('Anda tidak memiliki izin untuk ini.', 'wilayah-indonesia'));
-            return;
+        try {
+            check_ajax_referer('wilayah_settings_nonce', 'nonce');
+            
+            if (!current_user_can('manage_options')) {
+                wp_send_json_error('Anda tidak memiliki izin untuk ini.');
+                return;
+            }
+
+            // Log the raw data
+            error_log('Raw POST data: ' . print_r($_POST, true));
+
+            $permissions = isset($_POST['permissions']) ? $_POST['permissions'] : [];
+            
+            if (empty($permissions)) {
+                wp_send_json_error('Data permissions kosong');
+                return;
+            }
+
+            // Log the processed data
+            error_log('Processed permissions data: ' . print_r($permissions, true));
+
+            $result = $this->permission_model->savePermissions($permissions);
+            
+            if ($result === false) {
+                wp_send_json_error('Gagal menyimpan ke database');
+                return;
+            }
+
+            wp_send_json_success('Hak akses berhasil disimpan.');
+            
+        } catch (\Exception $e) {
+            error_log('Permission save error: ' . $e->getMessage());
+            wp_send_json_error('Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        $permissions = isset($_POST['permissions']) ? $_POST['permissions'] : [];
-        
-        // Tambahkan validasi data
-        if (empty($permissions) || !is_array($permissions)) {
-            wp_send_json_error(__('Data permission tidak valid.', 'wilayah-indonesia'));
-            return;
     }
-
-    $result = $this->permission_model->savePermissions($permissions);
-
-    if ($result) {
-        wp_send_json_success(__('Hak akses berhasil disimpan.', 'wilayah-indonesia'));
-    } else {
-        wp_send_json_error(__('Gagal menyimpan hak akses.', 'wilayah-indonesia'));
-    }
-}
-
 
     /**
      * Handle AJAX request untuk menyimpan pengaturan role

@@ -177,23 +177,25 @@ class PermissionModel {
      * Save permission settings
      */
     public function savePermissions(array $permissions): bool {
-        if (!is_array($permissions)) {
+        try {
+            error_log('Starting savePermissions with data: ' . print_r($permissions, true));
+            
+            if (empty($permissions)) {
+                error_log('Empty permissions data');
+                return false;
+            }
+
+            // Proses saving
+            $result = update_option($this->option_name, $permissions);
+            
+            error_log('Save result: ' . ($result ? 'success' : 'failed'));
+            
+            return $result;
+            
+        } catch (\Exception $e) {
+            error_log('Error in savePermissions: ' . $e->getMessage());
             return false;
         }
-
-        $sanitized = [];
-        foreach ($permissions as $role => $caps) {
-            $role = sanitize_key($role);
-            $sanitized[$role] = [];
-            
-            foreach ($this->capabilities as $cap_key => $cap_label) {
-                if (isset($caps[$cap_key])) {
-                    $sanitized[$role][$cap_key] = (bool) $caps[$cap_key];
-                }
-            }
-        }
-
-        return update_option($this->option_name, $sanitized);
     }
 
     /**
@@ -262,5 +264,5 @@ class PermissionModel {
             }
         }
     }
-    
+
 }
