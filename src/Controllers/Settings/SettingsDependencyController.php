@@ -92,7 +92,7 @@ class SettingsDependencyController {
         // JS Dependencies
         wp_enqueue_script('jquery');
         wp_enqueue_script('jquery-ui-tabs');
-
+        /*
         wp_enqueue_script(
             $this->plugin_name . '-permissions-script',
             WILAYAH_INDONESIA_URL . 'assets/js/settings/permissions-script.js',
@@ -100,6 +100,8 @@ class SettingsDependencyController {
             $this->version,
             true
         );
+        */
+
         wp_enqueue_script(
             $this->plugin_name . '-settings-script',
             WILAYAH_INDONESIA_URL . 'assets/js/settings/settings-script.js',
