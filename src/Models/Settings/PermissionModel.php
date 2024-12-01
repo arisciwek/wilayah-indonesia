@@ -90,4 +90,40 @@ class PermissionModel {
             }
         }
     }
+    
+    public function resetToDefault(): bool {
+    try {
+        // Reset semua role ke default
+        foreach (get_editable_roles() as $role_name => $role_info) {
+            $role = get_role($role_name);
+            if (!$role) continue;
+
+            // Hapus semua capability yang ada
+            foreach (array_keys($this->default_capabilities) as $cap) {
+                $role->remove_cap($cap);
+            }
+
+            // Jika administrator, berikan semua capability
+            if ($role_name === 'administrator') {
+                foreach (array_keys($this->default_capabilities) as $cap) {
+                    $role->add_cap($cap);
+                }
+                continue;
+            }
+
+            // Untuk role lain, berikan sesuai default jika ada
+            if (isset($this->default_role_caps[$role_name])) {
+                foreach ($this->default_role_caps[$role_name] as $cap) {
+                    $role->add_cap($cap);
+                }
+            }
+        }
+
+        return true;
+
+    } catch (\Exception $e) {
+        error_log('Error resetting permissions: ' . $e->getMessage());
+        return false;
+    }
+}
 }

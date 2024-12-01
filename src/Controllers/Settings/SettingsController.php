@@ -114,7 +114,7 @@ class SettingsController {
             'role_capabilities' => $role_capabilities
         ];
     }
-
+    
     public function handlePermissionUpdate() {
         try {
             if (!check_admin_referer('wilayah_permissions_nonce', 'security')) {
@@ -125,25 +125,39 @@ class SettingsController {
                 wp_die(__('Anda tidak memiliki izin untuk ini.', 'wilayah-indonesia'));
             }
 
-            $permissions = isset($_POST['permissions']) ? $_POST['permissions'] : [];
-            $updated = false;
-
-            foreach (get_editable_roles() as $role_name => $role_info) {
-                if ($role_name === 'administrator') continue;
-
-                $role_permissions = isset($permissions[$role_name]) ? $permissions[$role_name] : [];
-                if ($this->permission_model->updateRoleCapabilities($role_name, $role_permissions)) {
-                    $updated = true;
+            // Check if this is a reset action
+            if (isset($_POST['reset_permissions'])) {
+                $reset = $this->permission_model->resetToDefault();
+                if ($reset) {
+                    add_settings_error(
+                        'wilayah_messages',
+                        'permissions_reset',
+                        __('Hak akses berhasil direset ke default.', 'wilayah-indonesia'),
+                        'success'
+                    );
                 }
-            }
+            } else {
+                // Normal update process
+                $permissions = isset($_POST['permissions']) ? $_POST['permissions'] : [];
+                $updated = false;
 
-            if ($updated) {
-                add_settings_error(
-                    'wilayah_messages',
-                    'permissions_updated',
-                    __('Hak akses berhasil diperbarui.', 'wilayah-indonesia'),
-                    'success'
-                );
+                foreach (get_editable_roles() as $role_name => $role_info) {
+                    if ($role_name === 'administrator') continue;
+
+                    $role_permissions = isset($permissions[$role_name]) ? $permissions[$role_name] : [];
+                    if ($this->permission_model->updateRoleCapabilities($role_name, $role_permissions)) {
+                        $updated = true;
+                    }
+                }
+
+                if ($updated) {
+                    add_settings_error(
+                        'wilayah_messages',
+                        'permissions_updated',
+                        __('Hak akses berhasil diperbarui.', 'wilayah-indonesia'),
+                        'success'
+                    );
+                }
             }
 
         } catch (\Exception $e) {
@@ -155,8 +169,12 @@ class SettingsController {
             );
         }
 
-        // Redirect back to settings page
-        wp_redirect(add_query_arg(['tab' => 'permission'], wp_get_referer()));
+        // Redirect back with status
+        wp_redirect(add_query_arg([
+            'page' => 'wilayah-indonesia-settings',
+            'tab' => 'permission',
+            'settings-updated' => 'true'
+        ], admin_url('admin.php')));
         exit;
     }
 }
