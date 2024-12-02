@@ -247,4 +247,73 @@ class ProvinceController {
         return current_user_can('delete_province') || 
                (current_user_can('delete_own_province') && $province->created_by === get_current_user_id());
     }
+
+    /**
+     * Handle DataTables AJAX request for province listing
+     */
+    public function handleDataTableRequest() {
+        check_ajax_referer('wilayah_nonce', 'nonce');
+        
+        if (!current_user_can('view_province_list')) {
+            wp_send_json_error([
+                'message' => __('Insufficient permissions', 'wilayah-indonesia')
+            ]);
+        }
+
+        // Get DataTables parameters
+        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
+        $start = isset($_POST['start']) ? intval($_POST['start']) : 0;
+        $length = isset($_POST['length']) ? intval($_POST['length']) : 10;
+        $search = isset($_POST['search']['value']) ? sanitize_text_field($_POST['search']['value']) : '';
+        
+        // Get ordering
+        $order_column = 'name'; // default
+        $order_dir = 'ASC';
+        
+        if (isset($_POST['order'][0])) {
+            $columns = ['name', 'regency_count'];
+            $column_index = intval($_POST['order'][0]['column']);
+            if (isset($columns[$column_index])) {
+                $order_column = $columns[$column_index];
+                $order_dir = strtoupper($_POST['order'][0]['dir']) === 'DESC' ? 'DESC' : 'ASC';
+            }
+        }
+
+        try {
+            // Get data from model
+            $result = $this->model->getDataTableData(
+                $start,
+                $length,
+                $search,
+                $order_column,
+                $order_dir
+            );
+
+            // Format data for DataTables
+            $data = [];
+            foreach ($result['data'] as $province) {
+                if ($this->canViewProvince($province)) {
+                    $data[] = [
+                        'id' => $province->id,
+                        'name' => esc_html($province->name),
+                        'regency_count' => $this->model->getRegencyCount($province->id),
+                        'actions' => $this->generateActionButtons($province)
+                    ];
+                }
+            }
+
+            wp_send_json_success([
+                'draw' => $draw,
+                'recordsTotal' => $this->model->getTotalCount(),
+                'recordsFiltered' => $result['filtered_count'],
+                'data' => $data
+            ]);
+
+        } catch (Exception $e) {
+            wp_send_json_error([
+                'message' => $e->getMessage()
+            ]);
+        }
+    }
+    
 }

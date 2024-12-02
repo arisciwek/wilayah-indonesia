@@ -17,6 +17,10 @@ class Wilayah_Indonesia_Dependencies {
     public function __construct($plugin_name, $version) {
         $this->plugin_name = $plugin_name;
         $this->version = $version;
+
+        // Tambahkan action hook untuk DataTables di sini
+        add_action('wp_ajax_handle_province_datatable', array($this, 'handleProvinceDataTable'));
+
     }
 
     public function enqueue_styles() {
@@ -170,11 +174,29 @@ class Wilayah_Indonesia_Dependencies {
                         )
                     )
                 );
+
+                // Localized data untuk DataTables
+                wp_localize_script(
+                    'wilayah-province', // handle yang sama dengan yang digunakan saat enqueue
+                    'wilayahData',      // nama variable yang akan diakses di JavaScript
+                    [
+                        'ajaxUrl' => admin_url('admin-ajax.php'),
+                        'nonce' => wp_create_nonce('wilayah_nonce'),
+                        'perPage' => get_option('posts_per_page'),
+                        'caps' => [
+                            'view' => current_user_can('view_province'),
+                            'edit' => current_user_can('edit_province'),
+                            'delete' => current_user_can('delete_province')
+                        ]
+                    ]
+                );                
             }
         }
-
-/*
- */
-
+    }
+    
+    // Tambahkan method callback untuk DataTables
+    public function handleProvinceDataTable() {
+        $controller = new \WilayahIndonesia\Controllers\ProvinceController();
+        $controller->handleDataTableRequest();
     }
 }

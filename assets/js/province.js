@@ -37,11 +37,14 @@
     'use strict';
     
     import ProvinceDataTable from './components/province-datatable';
+    import ProvinceToast from './components/province-toast';
 
     const Province = {
         table: null,
         rightPanel: null,
         currentMode: 'view',
+        // Tambahkan properti form
+        form: null,
 
         init() {
             this.dataTable = ProvinceDataTable;
@@ -49,6 +52,13 @@
             this.initRightPanel();
             this.bindEvents();
             this.checkUrlHash();
+        
+            // Initialize form handler
+            this.form = ProvinceForm;
+            this.form.init();
+            
+            // Initialize toast
+            ProvinceToast.init();
         },
 
         // Initialize DataTables
@@ -225,7 +235,30 @@
                 }
             });
             $(document).trigger('province:updated');
+            
+            // Delegate ke ProvinceForm
+            this.form.handleUpdate(e).then(() => {
+                if (this.table) {
+                    this.table.ajax.reload(null, false);
+                }
+            });
         },
+
+        // Update setLoadingState method
+        setLoadingState($form, loading) {
+            // Delegate ke ProvinceForm
+            this.form.setLoadingState($form, loading);
+        },
+
+        // Update showError method
+        showError(message) {
+            ProvinceToast.error(message);
+        },
+
+        // Update showSuccess method
+        showSuccess(message) {
+            ProvinceToast.success(message);
+        }
 
         // Handle delete action
         handleDelete(e) {

@@ -1,0 +1,196 @@
+/**
+ * Province Form Styles
+ *
+ * @package     Wilayah_Indonesia
+ * @subpackage  Assets/CSS
+ * @version     1.0.0
+ * @author      arisciwek
+ * 
+ * Path: assets/css/province-form.css
+ * 
+ * Description: Styling untuk form provinsi.
+ *              Includes validation states, loading indicators,
+ *              dan toast notifications.
+ *              Mengikuti WordPress admin styling conventions.
+ */
+
+/* Form Validation States */
+.wi-form-group {
+    position: relative;
+    margin-bottom: 15px;
+}
+
+.wi-form-group input.error {
+    border-color: #d63638;
+}
+
+.wi-form-group .form-error {
+    display: block;
+    color: #d63638;
+    font-size: 12px;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+/* Loading States */
+.wi-form.loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.wi-form.loading::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 1;
+}
+
+.wi-form.loading .spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 2;
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Submit Button States */
+.wi-form .submit-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 15px;
+    margin-top: 20px;
+    border-top: 1px solid #dcdcde;
+}
+
+.wi-form .submit-wrapper .spinner {
+    float: none;
+    margin: 0;
+}
+
+/* Toast Notifications */
+.province-toast {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    margin-bottom: 10px;
+}
+
+.province-toast p {
+    margin: 0;
+    line-height: 1.4;
+}
+
+.province-toast button {
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.province-toast button:hover {
+    opacity: 1;
+}
+
+/* Form Fields */
+.wi-form input[type="text"] {
+    width: 100%;
+    max-width: 25em;
+}
+
+.wi-form input[type="text"]:focus {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+/* Field Description */
+.wi-form .field-description {
+    color: #646970;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Required Field Indicator */
+.wi-form .required-field::after {
+    content: '*';
+    color: #d63638;
+    margin-left: 4px;
+}
+
+/* Form Grid Layout */
+.wi-form-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 15px;
+    align-items: start;
+}
+
+@media screen and (max-width: 782px) {
+    .wi-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Responsive Adjustments */
+@media screen and (max-width: 782px) {
+    .wi-form input[type="text"] {
+        max-width: none;
+    }
+    
+    .wi-form .submit-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .wi-form .submit-wrapper button {
+        width: 100%;
+    }
+}
+
+/* Form Section */
+.wi-form-section {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #dcdcde;
+}
+
+.wi-form-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+/* Help Text Toggle */
+.wi-form .help-text-toggle {
+    color: #2271b1;
+    text-decoration: none;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.wi-form .help-text {
+    display: none;
+    margin-top: 10px;
+    padding: 10px;
+    background: #f0f6fc;
+    border-left: 4px solid #72aee6;
+}
+
+.wi-form .help-text.visible {
+    display: block;
+}
+
+/* Form Actions */
+.wi-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.wi-form-actions button {
+    min-width: 100px;
+}

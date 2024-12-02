@@ -2,22 +2,23 @@
 ├── assets
 │   ├── css
 │   │   ├── province.css
+│   │   ├── province-form.css
 │   │   └── settings
 │   │       ├── common-style.css
-│   │       ├── permissions-style.css
+│   │       ├── general-tab-style.css
+│   │       ├── permission-tab-style.css
 │   │       └── settings-style.css
 │   └── js
+│       ├── components
+│       │   ├── province-datatable.js
+│       │   ├── province-form.js
+│       │   ├── province-toast.js
+│       │   └── toast.js
 │       ├── province.js
 │       └── settings
 │           ├── permissions-script.js
 │           └── settings-script.js
 ├── docs
-│   ├── layout-01.html.txt
-│   ├── layout-02.html.txt
-│   ├── rencana-pengembangan-plugin-v2.md
-│   ├── rencana-pengembangan-plugin-v4.md
-│   ├── struktur-direktori.md
-│   └── tree-settings.md
 ├── includes
 │   ├── class-activator.php
 │   ├── class-deactivator.php
@@ -25,27 +26,34 @@
 │   └── class-loader.php
 ├── LICENSE
 ├── README.md
+├── sql
+│   └── province-table.sql
 ├── src
 │   ├── Controllers
 │   │   ├── MenuManager.php
 │   │   ├── ProvinceController.php
 │   │   └── Settings
-│   │       ├── SettingsController.php
-│   │       └── SettingsDependencyController.php
+│   │       └── SettingsController.php
 │   ├── Models
+│   │   ├── ProvinceModel.php
 │   │   └── Settings
 │   │       ├── PermissionModel.php
 │   │       └── SettingsModel.php
 │   ├── Validators
+│   │   └── ProvinceValidator.php
 │   └── Views
 │       └── templates
 │           ├── province-dashboard.php
 │           ├── province-left-panel.php
 │           ├── province-right-panel.php
 │           └── settings
+│               ├── settings-page.php
 │               └── tabs
+│                   ├── general-tab.php
+│                   ├── permission-tab.php
+│                   └── role-tab.php
 ├── tree.md
 ├── uninstall.php
 └── wilayah-indonesia.php
 
-17 directories, 31 files
+19 directories, 37 files
