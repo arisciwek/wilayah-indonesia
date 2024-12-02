@@ -21,13 +21,14 @@
  * - SettingsModel 
  * - WordPress admin functions
  */
-
 namespace WilayahIndonesia\Controllers\Settings;
 
 use WilayahIndonesia\Models\Settings\SettingsModel;
 use WilayahIndonesia\Models\Settings\PermissionModel;
 
 class SettingsController {
+    const SETTINGS_PAGE_SLUG = 'wilayah-indonesia-settings';
+
     private $settings_model;
     private $permission_model;
     private $tabs = [];
@@ -41,8 +42,12 @@ class SettingsController {
             'permission' => __('Hak Akses', 'wilayah-indonesia')
         ];
 
+
+        // Register handler untuk admin_post dan ajax
+        add_action('wp_ajax_update_wilayah_permissions', [$this, 'handleAjaxPermissionUpdate']);
+
         // Register handler untuk admin_post
-        add_action('admin_post_update_wilayah_permissions', [$this, 'handlePermissionUpdate']);
+        // add_action('admin_post_update_wilayah_permissions', [$this, 'handlePermissionUpdate']);
     }
 
 
@@ -114,67 +119,93 @@ class SettingsController {
             'role_capabilities' => $role_capabilities
         ];
     }
-    
-    public function handlePermissionUpdate() {
+
+    /**
+     * Handle AJAX permission update
+     */
+    public function handleAjaxPermissionUpdate() {
         try {
-            if (!check_admin_referer('wilayah_permissions_nonce', 'security')) {
-                wp_die(__('Invalid security token sent.', 'wilayah-indonesia'));
-            }
+            check_ajax_referer('wilayah_permissions_nonce', 'security');
 
             if (!current_user_can('manage_options')) {
-                wp_die(__('Anda tidak memiliki izin untuk ini.', 'wilayah-indonesia'));
+                wp_send_json_error([
+                    'message' => __('Anda tidak memiliki izin untuk ini.', 'wilayah-indonesia')
+                ]);
+                return;
             }
 
-            // Check if this is a reset action
+            // Handle reset action
             if (isset($_POST['reset_permissions'])) {
                 $reset = $this->permission_model->resetToDefault();
                 if ($reset) {
-                    add_settings_error(
-                        'wilayah_messages',
-                        'permissions_reset',
-                        __('Hak akses berhasil direset ke default.', 'wilayah-indonesia'),
-                        'success'
-                    );
+                    wp_send_json_success([
+                        'message' => __('Hak akses berhasil direset ke default.', 'wilayah-indonesia'),
+                        'reload' => true
+                    ]);
+                } else {
+                    wp_send_json_error([
+                        'message' => __('Gagal mereset hak akses.', 'wilayah-indonesia')
+                    ]);
                 }
-            } else {
-                // Normal update process
-                $permissions = isset($_POST['permissions']) ? $_POST['permissions'] : [];
-                $updated = false;
+                return;
+            }
 
-                foreach (get_editable_roles() as $role_name => $role_info) {
-                    if ($role_name === 'administrator') continue;
+            // Handle normal update
+            $permissions = isset($_POST['permissions']) ? $_POST['permissions'] : [];
+            if (empty($permissions)) {
+                wp_send_json_error([
+                    'message' => __('Data permissions tidak valid.', 'wilayah-indonesia')
+                ]);
+                return;
+            }
 
-                    $role_permissions = isset($permissions[$role_name]) ? $permissions[$role_name] : [];
-                    if ($this->permission_model->updateRoleCapabilities($role_name, $role_permissions)) {
+            $updated = false;
+            $errors = [];
+
+            foreach ($permissions as $role_name => $role_permissions) {
+                if ($role_name === 'administrator') {
+                    continue;
+                }
+
+                try {
+                    $result = $this->permission_model->updateRoleCapabilities($role_name, $role_permissions);
+                    if ($result) {
                         $updated = true;
                     }
-                }
-
-                if ($updated) {
-                    add_settings_error(
-                        'wilayah_messages',
-                        'permissions_updated',
-                        __('Hak akses berhasil diperbarui.', 'wilayah-indonesia'),
-                        'success'
+                } catch (\Exception $e) {
+                    $errors[] = sprintf(
+                        __('Gagal update role %s: %s', 'wilayah-indonesia'),
+                        $role_name,
+                        $e->getMessage()
                     );
                 }
             }
 
-        } catch (\Exception $e) {
-            add_settings_error(
-                'wilayah_messages',
-                'permissions_error',
-                $e->getMessage(),
-                'error'
-            );
-        }
+            if ($updated) {
+                $response = [
+                    'message' => __('Hak akses berhasil diperbarui.', 'wilayah-indonesia'),
+                    'reload' => false
+                ];
+                
+                if (!empty($errors)) {
+                    $response['warnings'] = $errors;
+                }
+                
+                wp_send_json_success($response);
+            } else {
+                wp_send_json_error([
+                    'message' => !empty($errors) 
+                        ? implode("\n", $errors)
+                        : __('Tidak ada perubahan yang perlu disimpan.', 'wilayah-indonesia')
+                ]);
+            }
 
-        // Redirect back with status
-        wp_redirect(add_query_arg([
-            'page' => 'wilayah-indonesia-settings',
-            'tab' => 'permission',
-            'settings-updated' => 'true'
-        ], admin_url('admin.php')));
-        exit;
+        } catch (\Exception $e) {
+            error_log('Wilayah Permission Update Error: ' . $e->getMessage());
+            wp_send_json_error([
+                'message' => $e->getMessage()
+            ]);
+        }
     }
+    
 }

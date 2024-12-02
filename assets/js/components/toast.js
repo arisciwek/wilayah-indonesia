@@ -1,30 +1,18 @@
 /**
  * File: toast.js
  * Path: /wilayah-indonesia/assets/js/components/toast.js
- * Description: Handles toast notifications for the plugin
- * Version: 1.0.0
- * Last modified: 2024-11-26
- * Dependencies: jQuery
- * 
- * Features:
- * - Shows success/error notifications
- * - Auto-dismisses after configurable duration
- * - Supports animations and position customization
- * - Ensures single toast instance
- * 
- * Usage:
- * wilayahToast.success('Success message');
- * wilayahToast.error('Error message');
+ * Description: Komponen notifikasi untuk feedback UI
+ * Version: 2.0.0
+ * Last modified: 2024-11-28 09:45:00
  */
-// File: assets/js/components/toast.js
 
-const irToast = {
+const wilayahToast = {
     container: null,
     
     init() {
         if (!this.container) {
             this.container = document.createElement('div');
-            this.container.id = 'ir-toast-container';
+            this.container.id = 'wilayah-toast-container';
             this.container.style.cssText = `
                 position: fixed;
                 top: 32px;
@@ -39,7 +27,7 @@ const irToast = {
         this.init();
         
         const toast = document.createElement('div');
-        toast.className = `ir-toast ir-toast-${type}`;
+        toast.className = `wilayah-toast wilayah-toast-${type}`;
         toast.style.cssText = `
             margin-bottom: 10px;
             padding: 12px 24px;
@@ -51,7 +39,6 @@ const irToast = {
             transition: opacity 0.3s ease;
         `;
         
-        // Set background color based on type
         switch (type) {
             case 'success':
                 toast.style.backgroundColor = '#4CAF50';
@@ -67,15 +54,24 @@ const irToast = {
                 break;
         }
         
-        toast.textContent = message;
+        // Support untuk multiple line messages
+        if (Array.isArray(message)) {
+            message.forEach(msg => {
+                const p = document.createElement('p');
+                p.style.margin = '5px 0';
+                p.textContent = msg;
+                toast.appendChild(p);
+            });
+        } else {
+            toast.textContent = message;
+        }
+
         this.container.appendChild(toast);
         
-        // Trigger animation
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             toast.style.opacity = '1';
-        }, 10);
+        });
         
-        // Remove toast after duration
         setTimeout(() => {
             toast.style.opacity = '0';
             setTimeout(() => {
@@ -101,7 +97,9 @@ const irToast = {
     info(message, duration) {
         this.show(message, 'info', duration);
     }
+    
 };
 
-// Expose to global scope
-window.irToast = irToast;
+// Expose untuk global scope
+window.wilayahToast = wilayahToast;
+

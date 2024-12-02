@@ -11,11 +11,20 @@
  *   - 2024-11-23: Added custom prefix wi_ for tables
  */
 
+use WilayahIndonesia\Models\Settings\PermissionModel;
+
 class Wilayah_Indonesia_Activator {
+
+
     public static function activate() {
         self::createTables();
         self::addVersion();
+        
+        // Pastikan instansiasi PermissionModel dengan benar
+        $permission_model = new PermissionModel();
+        $permission_model->addCapabilities();
     }
+
 
     private static function createTables() {
         global $wpdb;

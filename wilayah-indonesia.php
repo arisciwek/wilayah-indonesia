@@ -38,15 +38,30 @@ class WilayahIndonesia {
         $this->includeDependencies();
         $this->initHooks();
     }
+    
+    private function initHooks() {
+        register_activation_hook(__FILE__, array('Wilayah_Indonesia_Activator', 'activate'));
+        register_deactivation_hook(__FILE__, array('Wilayah_Indonesia_Deactivator', 'deactivate'));
+        
+        // Inisialisasi menu
+        $menu_manager = new \WilayahIndonesia\Controllers\MenuManager($this->plugin_name, $this->version);
+        $this->loader->add_action('init', $menu_manager, 'init');
+
+        // Tambahkan ini untuk menangani dependencies
+        $dependencies = new Wilayah_Indonesia_Dependencies($this->plugin_name, $this->version);
+        $this->loader->add_action('admin_enqueue_scripts', $dependencies, 'enqueue_styles');
+        $this->loader->add_action('admin_enqueue_scripts', $dependencies, 'enqueue_scripts');
+    }
 
     private function includeDependencies() {
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-loader.php';
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-activator.php';
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-deactivator.php';
+        require_once WILAYAH_INDONESIA_PATH . 'includes/class-dependencies.php'; // Tambahkan ini
 
-        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/Settings/SettingsDependencyController.php';
         require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/Settings/SettingsController.php';        
         require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/MenuManager.php';
+
         require_once WILAYAH_INDONESIA_PATH . 'src/Models/Settings/SettingsModel.php';
         require_once WILAYAH_INDONESIA_PATH . 'src/Models/Settings/PermissionModel.php';
 
@@ -69,15 +84,6 @@ class WilayahIndonesia {
                 require $file;
             }
         });
-    }
-    
-    private function initHooks() {
-        register_activation_hook(__FILE__, array('Wilayah_Indonesia_Activator', 'activate'));
-        register_deactivation_hook(__FILE__, array('Wilayah_Indonesia_Deactivator', 'deactivate'));
-        
-        // Inisialisasi menu
-        $menu_manager = new \WilayahIndonesia\Controllers\MenuManager($this->plugin_name, $this->version);
-        $this->loader->add_action('init', $menu_manager, 'init');
     }
 
     public function run() {

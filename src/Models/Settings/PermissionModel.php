@@ -37,7 +37,6 @@ class PermissionModel {
         }
 
         $has_cap = $role->has_cap($capability);
-        error_log("Role $role_name capability $capability: " . ($has_cap ? 'true' : 'false'));
         return $has_cap;
     }
 

@@ -20,6 +20,14 @@ class Wilayah_Indonesia_Dependencies {
     }
 
     public function enqueue_styles() {
+        // Get current screen
+        $screen = get_current_screen();
+        
+        // Only load for our plugin pages
+        if (!$screen || strpos($screen->id, 'wilayah-indonesia') === false) {
+            return;
+        }
+        
         // Bootstrap dari CDN
         wp_enqueue_style(
             $this->plugin_name . '-bootstrap',
@@ -48,9 +56,40 @@ class Wilayah_Indonesia_Dependencies {
         }
 
         wp_enqueue_style('wilayah-settings', WILAYAH_INDONESIA_URL . 'assets/css/settings/settings-style.css');
+
+        $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general';
+        
+        // Tab specific styles
+        switch ($current_tab) {
+            case 'permission':
+                wp_enqueue_style(
+                    $this->plugin_name . '-permission-style',
+                    WILAYAH_INDONESIA_URL . 'assets/css/settings/permission-tab-style.css',
+                    array(),
+                    $this->version
+                );
+                break;
+
+            case 'general':
+                wp_enqueue_style(
+                    $this->plugin_name . '-general-tab',
+                    WILAYAH_INDONESIA_URL . 'assets/css/settings/general-tab-style.css',
+                    array(),
+                    $this->version
+                );
+                break;
+        }
     }
 
     public function enqueue_scripts() {
+        // Get current screen  
+        $screen = get_current_screen();
+        
+        // Only load for our plugin pages
+        if (!$screen || strpos($screen->id, 'wilayah-indonesia') === false) {
+            return;
+        }
+
         // jQuery sudah include di WordPress
         
         // Bootstrap JS dari CDN
@@ -87,6 +126,55 @@ class Wilayah_Indonesia_Dependencies {
             ));
         }
 
-        wp_enqueue_script('wilayah-settings', WILAYAH_INDONESIA_URL . 'assets/js/settings/settings-script.js');
+        // Get current tab
+        $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general';
+
+        // Load toast component
+        wp_enqueue_script(
+            $this->plugin_name . '-toast',
+            WILAYAH_INDONESIA_URL . 'assets/js/components/toast.js',
+            array('jquery'),
+            $this->version,
+            true
+        );
+
+        // Settings scripts
+        if (strpos($screen->id, 'wilayah-indonesia-settings') !== false) {
+            wp_enqueue_script(
+                $this->plugin_name . '-settings',
+                WILAYAH_INDONESIA_URL . 'assets/js/settings/settings-script.js',
+                array('jquery', $this->plugin_name . '-toast'),
+                $this->version,
+                true
+            );
+
+            // Tab specific scripts
+            if ($current_tab === 'permission') {
+                wp_enqueue_script(
+                    $this->plugin_name . '-permissions',
+                    WILAYAH_INDONESIA_URL . 'assets/js/settings/permissions-script.js',
+                    array('jquery', $this->plugin_name . '-toast', $this->plugin_name . '-settings'),
+                    $this->version,
+                    true
+                );
+
+                wp_localize_script(
+                    $this->plugin_name . '-permissions',
+                    'wilayahSettings',
+                    array(
+                        'strings' => array(
+                            'confirmReset' => __('Yakin ingin mereset semua hak akses ke default?', 'wilayah-indonesia'),
+                            'saveSuccess' => __('Hak akses berhasil diperbarui.', 'wilayah-indonesia'),
+                            'saveError' => __('Terjadi kesalahan saat menyimpan hak akses.', 'wilayah-indonesia'),
+                            'networkError' => __('Gagal menghubungi server. Silakan coba lagi.', 'wilayah-indonesia')
+                        )
+                    )
+                );
+            }
+        }
+
+/*
+ */
+
     }
 }

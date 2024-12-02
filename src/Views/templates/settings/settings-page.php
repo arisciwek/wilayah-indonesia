@@ -15,8 +15,10 @@
  * - Add tab content rendering
  */
 
-// Prevent direct access
 defined('ABSPATH') || exit;
+
+// Get reference to SettingsController
+$controller = isset($this) ? $this : null;
 ?>
 
 <div class="wrap">
@@ -26,10 +28,17 @@ defined('ABSPATH') || exit;
 
     <nav class="nav-tab-wrapper">
         <?php
-        foreach ($this->tabs as $tab_id => $tab_name) {
+        // Use controller's tabs if available, otherwise fallback to passed tabs
+        $tabs = isset($controller) ? $controller->tabs : (isset($tabs) ? $tabs : []);
+        
+        foreach ($tabs as $tab_id => $tab_name) {
             $active = $current_tab === $tab_id ? 'nav-tab-active' : '';
-            $url = add_query_arg('tab', $tab_id);
-            echo sprintf(
+            $url = add_query_arg([
+                'page' => 'wilayah-indonesia-settings',
+                'tab' => $tab_id
+            ], admin_url('admin.php'));
+            
+            printf(
                 '<a href="%s" class="nav-tab %s">%s</a>',
                 esc_url($url),
                 esc_attr($active),
@@ -40,6 +49,13 @@ defined('ABSPATH') || exit;
     </nav>
 
     <div class="tab-content">
-        <?php $this->renderTab($current_tab); ?>
+        <?php 
+        if (isset($controller)) {
+            $controller->renderTab($current_tab);
+        } else {
+            // Fallback render
+            require WILAYAH_INDONESIA_PATH . "src/Views/templates/settings/tabs/{$current_tab}-tab.php";
+        }
+        ?>
     </div>
 </div>

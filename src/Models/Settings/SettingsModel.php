@@ -3,16 +3,18 @@
  * File: SettingsModel.php
  * Path: /wilayah-indonesia/src/Models/Settings/SettingsModel.php
  * Description: Model untuk mengelola pengaturan umum plugin
- * Version: 1.1.0
- * Last modified: 2024-11-25 06:15:00
+ * Version: 1.2.0
+ * Last modified: 2024-11-28 08:45:00
  * 
  * Changelog:
+ * v1.2.0 - 2024-11-28
+ * - Mengganti semua constants menjadi properti class
+ * - Perbaikan penggunaan properti di seluruh method
+ * 
  * v1.1.0 - 2024-11-25
  * - Added getSettings method untuk mendapatkan semua pengaturan
  * - Added registerSettings method untuk mendaftarkan pengaturan ke WordPress
  * - Added saveGeneralSettings method untuk menyimpan pengaturan umum
- * - Restructured settings organization
- * - Added proper settings registration
  * 
  * v1.0.0 - 2024-11-23
  * - Initial creation
@@ -21,8 +23,8 @@
 namespace WilayahIndonesia\Models\Settings;
 
 class SettingsModel {
-    private const OPTION_GROUP = 'wilayah_indonesia_settings';
-    private const GENERAL_OPTIONS = 'wilayah_indonesia_general_options';
+    private $option_group = 'wilayah_indonesia_settings';
+    private $general_options = 'wilayah_indonesia_general_options';
     
     private $default_options = [
         'records_per_page' => 15,
@@ -52,8 +54,8 @@ class SettingsModel {
      */
     public function registerSettings() {
         register_setting(
-            self::OPTION_GROUP,
-            self::GENERAL_OPTIONS,
+            $this->option_group,
+            $this->general_options,
             [
                 'type' => 'array',
                 'sanitize_callback' => [$this, 'sanitizeOptions']
@@ -65,7 +67,7 @@ class SettingsModel {
             'wilayah_general_section',
             __('Pengaturan Umum', 'wilayah-indonesia'),
             [$this, 'renderGeneralSection'],
-            self::OPTION_GROUP
+            $this->option_group
         );
 
         // Add settings fields
@@ -73,7 +75,7 @@ class SettingsModel {
             'records_per_page',
             __('Data Per Halaman', 'wilayah-indonesia'),
             [$this, 'renderNumberField'],
-            self::OPTION_GROUP,
+            $this->option_group,
             'wilayah_general_section',
             [
                 'id' => 'records_per_page',
@@ -85,7 +87,7 @@ class SettingsModel {
             'enable_caching',
             __('Aktifkan Cache', 'wilayah-indonesia'),
             [$this, 'renderCheckboxField'],
-            self::OPTION_GROUP,
+            $this->option_group,
             'wilayah_general_section',
             [
                 'id' => 'enable_caching',
@@ -98,7 +100,7 @@ class SettingsModel {
      * Get general options dengan default values
      */
     public function getGeneralOptions(): array {
-        $options = get_option(self::GENERAL_OPTIONS, []);
+        $options = get_option($this->general_options, []);
         return wp_parse_args($options, $this->default_options);
     }
 
@@ -158,7 +160,7 @@ class SettingsModel {
             return false;
         }
 
-        return update_option(self::GENERAL_OPTIONS, $options);
+        return update_option($this->general_options, $options);
     }
 
     /**
@@ -221,7 +223,7 @@ class SettingsModel {
      * Delete all plugin options
      */
     public function deleteOptions(): bool {
-        return delete_option(self::GENERAL_OPTIONS);
+        return delete_option($this->general_options);
     }
 
     /**
