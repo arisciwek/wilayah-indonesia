@@ -21,35 +21,39 @@ const ProvinceForm = {
     },
 
     init() {
+        if (typeof jQuery.validator === 'undefined') {
+            console.error('jQuery Validator is required but not loaded');
+            return;
+        }
         this.bindEvents();
         this.initValidation();
     },
 
     bindEvents() {
         // Create form submission
-        $(this.forms.create).on('submit', (e) => this.handleCreate(e));
+        jQuery(this.forms.create).on('submit', (e) => this.handleCreate(e));
         
-        // Edit form submission
-        $(this.forms.edit).on('submit', (e) => this.handleUpdate(e));
+        // Edit form submission  
+        jQuery(this.forms.edit).on('submit', (e) => this.handleUpdate(e));
         
         // Real-time validation
-        $(`${this.forms.create}, ${this.forms.edit}`).on('input', 'input[name="name"]', (e) => {
+        jQuery(`${this.forms.create}, ${this.forms.edit}`).on('input', 'input[name="name"]', (e) => {
             this.validateField(e.target);
         });
         
         // Cancel buttons
-        $('.cancel-edit').on('click', () => this.handleCancel());
+        jQuery('.cancel-edit').on('click', () => this.handleCancel());
     },
 
     initValidation() {
         // Add custom validation methods
-        $.validator.addMethod('validProvinceName', function(value, element) {
+        jQuery.validator.addMethod('validProvinceName', function(value, element) {
             return /^[a-zA-Z\s]+$/.test(value);
         }, 'Nama provinsi hanya boleh mengandung huruf dan spasi');
     },
 
     setupFormValidation(formId) {
-        return $(formId).validate({
+        return jQuery(formId).validate({
             rules: {
                 name: {
                     required: true,
@@ -71,20 +75,19 @@ const ProvinceForm = {
                 error.insertAfter(element);
             },
             highlight: (element) => {
-                $(element).addClass('error');
+                jQuery(element).addClass('error');
             },
             unhighlight: (element) => {
-                $(element).removeClass('error');
+                jQuery(element).removeClass('error');
             }
         });
     },
 
     validateField(field) {
-        const $field = $(field);
+        const $field = jQuery(field);
         const value = $field.val().trim();
         const errors = [];
 
-        // Basic validation
         if (!value) {
             errors.push('Nama provinsi wajib diisi');
         } else {
@@ -99,14 +102,13 @@ const ProvinceForm = {
             }
         }
 
-        // Update UI
         const $error = $field.next('.form-error');
         if (errors.length > 0) {
             $field.addClass('error');
             if ($error.length) {
                 $error.text(errors[0]);
             } else {
-                $('<span class="form-error"></span>')
+                jQuery('<span class="form-error"></span>')
                     .text(errors[0])
                     .insertAfter($field);
             }
@@ -120,59 +122,81 @@ const ProvinceForm = {
 
     async handleCreate(e) {
         e.preventDefault();
-        const $form = $(e.currentTarget);
-        const $submitBtn = $form.find('[type="submit"]');
-        const $spinner = $form.find('.spinner');
-
-        // Validate all fields
+        const $form = jQuery(e.currentTarget);
+        
+        console.log('Form submission started');
+        console.log('Form element:', $form[0]);
+        
         if (!this.validateAllFields($form)) {
+            console.log('Form validation failed');
             return;
         }
 
-        // Show loading state
+        const requestData = {
+            action: 'create_province',
+            nonce: wilayahData.nonce,
+            name: $form.find('[name="name"]').val()
+        };
+
+        console.log('Request data:', requestData);
+        console.log('wilayahData:', wilayahData);
+        
         this.setLoadingState($form, true);
 
         try {
-            const response = await $.ajax({
-                url: ajaxurl,
+            console.log('Sending AJAX request to:', wilayahData.ajaxUrl);
+            
+            const response = await jQuery.ajax({
+                url: wilayahData.ajaxUrl,
                 type: 'POST',
-                data: {
-                    action: 'create_province',
-                    nonce: wilayahData.nonce,
-                    name: $form.find('[name="name"]').val()
+                data: requestData,
+                beforeSend: function(xhr) {
+                    console.log('Request headers:', xhr.getAllResponseHeaders());
                 }
             });
 
+            console.log('AJAX response received:', response);
             if (response.success) {
+                console.log('Province created successfully');
                 ProvinceToast.created();
                 this.resetForm($form);
-                $(document).trigger('province:created', [response.data]);
+                // Tutup modal
+                jQuery('#create-province-modal').hide();
+                jQuery(document).trigger('province:created', [response.data]);
+                // Update hash dan tampilkan di panel kanan
+                window.location.hash = response.data.id;
+                jQuery(document).trigger('province:created', [response.data]);
             } else {
-                ProvinceToast.error(response.data.message || 'Gagal menambah provinsi');
+                console.error('Server returned error:', response);
+                ProvinceToast.error(response.data?.message || 'Gagal menambah provinsi');
             }
         } catch (error) {
-            console.error('Create province error:', error);
+            console.error('AJAX request failed:', {
+                error: error,
+                status: error.status,
+                statusText: error.statusText,
+                responseText: error.responseText
+            });
             ProvinceToast.ajaxError();
         } finally {
+            console.log('Request completed');
             this.setLoadingState($form, false);
         }
     },
-
+    
     async handleUpdate(e) {
         e.preventDefault();
-        const $form = $(e.currentTarget);
+        const $form = jQuery(e.currentTarget);
         const id = $form.find('#province-id').val();
 
-        // Validate all fields
         if (!this.validateAllFields($form)) {
             return;
         }
 
-        // Show loading state
         this.setLoadingState($form, true);
 
         try {
-            const response = await $.ajax({
+            const response = await jQuery.ajax({
                 url: ajaxurl,
                 type: 'POST',
                 data: {
@@ -185,7 +209,7 @@ const ProvinceForm = {
 
             if (response.success) {
                 ProvinceToast.updated();
-                $(document).trigger('province:updated', [response.data]);
+                jQuery(document).trigger('province:updated', [response.data]);
             } else {
                 ProvinceToast.error(response.data.message || 'Gagal memperbarui provinsi');
             }
@@ -233,4 +257,5 @@ const ProvinceForm = {
     }
 };
 
-export default ProvinceForm;
+// Expose for global use
+window.ProvinceForm = ProvinceForm;

@@ -35,9 +35,11 @@ namespace WilayahIndonesia\Models;
 use WilayahIndonesia\Models\Settings\PermissionModel;
 
 class ProvinceModel {
+
     private $table;
     private $regency_table;
-    private $cache_group = 'wilayah_indonesia';
+    private const CACHE_GROUP = 'wilayah_indonesia';
+    private const CACHE_EXPIRY = 12 * HOUR_IN_SECONDS;
     private $permission_model;
     
     public function __construct() {
@@ -48,13 +50,13 @@ class ProvinceModel {
     }
 
     /**
-     * Get all provinces with permission check
+     * Get all provinces with caching
      */
     public function getAll(): array {
         global $wpdb;
         
         $cache_key = 'province_list';
-        $provinces = wp_cache_get($cache_key, $this->cache_group);
+        $provinces = wp_cache_get($cache_key, self::CACHE_GROUP);
         
         if (false === $provinces) {
             $provinces = $wpdb->get_results("
@@ -66,29 +68,21 @@ class ProvinceModel {
             ");
             
             if ($provinces) {
-                wp_cache_set($cache_key, $provinces, $this->cache_group);
+                wp_cache_set($cache_key, $provinces, self::CACHE_GROUP, self::CACHE_EXPIRY);
             }
-        }
-        
-        // Filter berdasarkan permission
-        if (!current_user_can('view_province_detail')) {
-            $provinces = array_filter($provinces, function($province) {
-                return current_user_can('view_own_province') && 
-                       $province->created_by === get_current_user_id();
-            });
         }
         
         return $provinces ?: [];
     }
 
     /**
-     * Get single province by ID
+     * Get single province by ID with caching
      */
     public function find(int $id): ?object {
         global $wpdb;
         
         $cache_key = "province_{$id}";
-        $province = wp_cache_get($cache_key, $this->cache_group);
+        $province = wp_cache_get($cache_key, self::CACHE_GROUP);
         
         if (false === $province) {
             $province = $wpdb->get_row($wpdb->prepare("
@@ -100,15 +94,7 @@ class ProvinceModel {
             ", $id));
             
             if ($province) {
-                wp_cache_set($cache_key, $province, $this->cache_group);
-            }
-        }
-        
-        if ($province) {
-            // Check permission
-            if (!current_user_can('view_province_detail') && 
-                (!current_user_can('view_own_province') || $province->created_by !== get_current_user_id())) {
-                return null;
+                wp_cache_set($cache_key, $province, self::CACHE_GROUP, self::CACHE_EXPIRY);
             }
         }
         
@@ -116,14 +102,10 @@ class ProvinceModel {
     }
 
     /**
-     * Create new province
+     * Create new province and invalidate cache
      */
     public function create(array $data): ?int {
         global $wpdb;
-        
-        if (!current_user_can('add_province')) {
-            return null;
-        }
         
         $result = $wpdb->insert(
             $this->table,
@@ -144,21 +126,10 @@ class ProvinceModel {
     }
 
     /**
-     * Update province
+     * Update province and invalidate cache
      */
     public function update(int $id, array $data): bool {
         global $wpdb;
-        
-        $province = $this->find($id);
-        if (!$province) {
-            return false;
-        }
-        
-        // Check permission
-        if (!current_user_can('edit_all_provinces') && 
-            (!current_user_can('edit_own_province') || $province->created_by !== get_current_user_id())) {
-            return false;
-        }
         
         $result = $wpdb->update(
             $this->table,
@@ -169,7 +140,7 @@ class ProvinceModel {
         );
         
         if ($result !== false) {
-            $this->invalidateCache();
+            $this->invalidateCache($id);
             return true;
         }
         
@@ -177,23 +148,11 @@ class ProvinceModel {
     }
 
     /**
-     * Delete province
+     * Delete province and invalidate cache
      */
     public function delete(int $id): bool {
         global $wpdb;
         
-        $province = $this->find($id);
-        if (!$province) {
-            return false;
-        }
-        
-        // Check permission
-        if (!current_user_can('delete_province') && 
-            (!current_user_can('delete_own_province') || $province->created_by !== get_current_user_id())) {
-            return false;
-        }
-        
-        // Delete will cascade to regencies due to foreign key
         $result = $wpdb->delete(
             $this->table,
             ['id' => $id],
@@ -201,7 +160,7 @@ class ProvinceModel {
         );
         
         if ($result) {
-            $this->invalidateCache();
+            $this->invalidateCache($id);
             return true;
         }
         
@@ -209,16 +168,25 @@ class ProvinceModel {
     }
 
     /**
-     * Get regency count for province
+     * Get regency count with caching
      */
     public function getRegencyCount(int $id): int {
         global $wpdb;
         
-        return (int) $wpdb->get_var($wpdb->prepare("
-            SELECT COUNT(*) 
-            FROM {$this->regency_table} 
-            WHERE province_id = %d
-        ", $id));
+        $cache_key = "province_regency_count_{$id}";
+        $count = wp_cache_get($cache_key, self::CACHE_GROUP);
+        
+        if (false === $count) {
+            $count = (int) $wpdb->get_var($wpdb->prepare("
+                SELECT COUNT(*) 
+                FROM {$this->regency_table} 
+                WHERE province_id = %d
+            ", $id));
+            
+            wp_cache_set($cache_key, $count, self::CACHE_GROUP, self::CACHE_EXPIRY);
+        }
+        
+        return $count;
     }
 
     /**
@@ -241,16 +209,14 @@ class ProvinceModel {
     }
 
     /**
-     * Clear all cache
+     * Invalidate all related cache
      */
-    private function invalidateCache(): void {
-        wp_cache_delete('province_list', $this->cache_group);
+    private function invalidateCache(?int $id = null): void {
+        wp_cache_delete('province_list', self::CACHE_GROUP);
         
-        // Get all province IDs and invalidate individual caches
-        global $wpdb;
-        $ids = $wpdb->get_col("SELECT id FROM {$this->table}");
-        foreach ($ids as $id) {
-            wp_cache_delete("province_{$id}", $this->cache_group);
+        if ($id) {
+            wp_cache_delete("province_{$id}", self::CACHE_GROUP);
+            wp_cache_delete("province_regency_count_{$id}", self::CACHE_GROUP);
         }
     }
 

@@ -183,5 +183,3 @@ const ProvinceToast = {
 
 // Expose for global use
 window.ProvinceToast = ProvinceToast;
-
-export default ProvinceToast;

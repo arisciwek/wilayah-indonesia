@@ -43,14 +43,16 @@ class WilayahIndonesia {
         register_activation_hook(__FILE__, array('Wilayah_Indonesia_Activator', 'activate'));
         register_deactivation_hook(__FILE__, array('Wilayah_Indonesia_Deactivator', 'deactivate'));
         
+        // Inisialisasi dependencies
+        $dependencies = new Wilayah_Indonesia_Dependencies($this->plugin_name, $this->version);
+        
+        // Register hooks
+        $this->loader->add_action('admin_enqueue_scripts', $dependencies, 'enqueue_styles');
+        $this->loader->add_action('admin_enqueue_scripts', $dependencies, 'enqueue_scripts');
+        
         // Inisialisasi menu
         $menu_manager = new \WilayahIndonesia\Controllers\MenuManager($this->plugin_name, $this->version);
         $this->loader->add_action('init', $menu_manager, 'init');
-
-        // Tambahkan ini untuk menangani dependencies
-        $dependencies = new Wilayah_Indonesia_Dependencies($this->plugin_name, $this->version);
-        $this->loader->add_action('admin_enqueue_scripts', $dependencies, 'enqueue_styles');
-        $this->loader->add_action('admin_enqueue_scripts', $dependencies, 'enqueue_scripts');
     }
 
     private function includeDependencies() {

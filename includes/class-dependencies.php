@@ -20,7 +20,8 @@ class Wilayah_Indonesia_Dependencies {
 
         // Tambahkan action hook untuk DataTables di sini
         add_action('wp_ajax_handle_province_datatable', array($this, 'handleProvinceDataTable'));
-
+    
+        add_action('wp_ajax_create_province', array(new \WilayahIndonesia\Controllers\ProvinceController(), 'store'));
     }
 
     public function enqueue_styles() {
@@ -48,18 +49,28 @@ class Wilayah_Indonesia_Dependencies {
             '1.13.7'
         );
 
-        // Local styles - hanya jika file ada
-        if (file_exists(WILAYAH_INDONESIA_PATH . 'assets/css/province-style.css')) {
-            wp_enqueue_style(
-                $this->plugin_name,
-                WILAYAH_INDONESIA_URL . 'assets/css/province.css',
-                array(),
-                $this->version,
-                'all'
-            );
-        }
+        // Local styles
+        wp_enqueue_style(
+            $this->plugin_name . '-province',
+            WILAYAH_INDONESIA_URL . 'assets/css/province.css',
+            array(),
+            $this->version
+        );
 
-        wp_enqueue_style('wilayah-settings', WILAYAH_INDONESIA_URL . 'assets/css/settings/settings-style.css');
+        wp_enqueue_style(
+            $this->plugin_name . '-province-form',
+            WILAYAH_INDONESIA_URL . 'assets/css/province-form.css',
+            array(),
+            $this->version
+        );
+
+        // Settings styles
+        wp_enqueue_style(
+            'wilayah-settings',
+            WILAYAH_INDONESIA_URL . 'assets/css/settings/settings-style.css',
+            array(),
+            $this->version
+        );
 
         $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general';
         
@@ -86,6 +97,8 @@ class Wilayah_Indonesia_Dependencies {
     }
 
     public function enqueue_scripts() {
+        wp_add_inline_script('jquery-migrate', 'jQuery.migrateMute = true;', 'after');
+
         // Get current screen  
         $screen = get_current_screen();
         
@@ -94,8 +107,15 @@ class Wilayah_Indonesia_Dependencies {
             return;
         }
 
-        // jQuery sudah include di WordPress
-        
+        // Add jQuery Validator
+        wp_enqueue_script(
+            $this->plugin_name . '-validator',
+            'https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js',
+            array('jquery'),
+            '1.19.5',
+            true
+        );
+
         // Bootstrap JS dari CDN
         wp_enqueue_script(
             $this->plugin_name . '-bootstrap',
@@ -114,26 +134,7 @@ class Wilayah_Indonesia_Dependencies {
             true
         );
 
-        // Local script - hanya jika file ada
-        if (file_exists(WILAYAH_INDONESIA_PATH . 'assets/js/province-script.js')) {
-            wp_enqueue_script(
-                $this->plugin_name,
-                WILAYAH_INDONESIA_URL . 'assets/js/province-script.js',
-                array('jquery'),
-                $this->version,
-                true
-            );
-
-            wp_localize_script($this->plugin_name, 'wilayahData', array(
-                'ajax_url' => admin_url('admin-ajax.php'),
-                'nonce'    => wp_create_nonce('wilayah_nonce'),
-            ));
-        }
-
-        // Get current tab
-        $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general';
-
-        // Load toast component
+        // Toast Components
         wp_enqueue_script(
             $this->plugin_name . '-toast',
             WILAYAH_INDONESIA_URL . 'assets/js/components/toast.js',
@@ -142,60 +143,70 @@ class Wilayah_Indonesia_Dependencies {
             true
         );
 
-        // Settings scripts
-        if (strpos($screen->id, 'wilayah-indonesia-settings') !== false) {
-            wp_enqueue_script(
-                $this->plugin_name . '-settings',
-                WILAYAH_INDONESIA_URL . 'assets/js/settings/settings-script.js',
-                array('jquery', $this->plugin_name . '-toast'),
-                $this->version,
-                true
-            );
+        wp_enqueue_script(
+            $this->plugin_name . '-province-toast',
+            WILAYAH_INDONESIA_URL . 'assets/js/components/province-toast.js',
+            array('jquery', $this->plugin_name . '-toast'),
+            $this->version,
+            true
+        );
 
-            // Tab specific scripts
-            if ($current_tab === 'permission') {
-                wp_enqueue_script(
-                    $this->plugin_name . '-permissions',
-                    WILAYAH_INDONESIA_URL . 'assets/js/settings/permissions-script.js',
-                    array('jquery', $this->plugin_name . '-toast', $this->plugin_name . '-settings'),
-                    $this->version,
-                    true
-                );
+        // Province Components
+        wp_enqueue_script(
+            $this->plugin_name . '-province-datatable',
+            WILAYAH_INDONESIA_URL . 'assets/js/components/province-datatable.js',
+            array('jquery', $this->plugin_name . '-datatables', $this->plugin_name . '-province-toast'),
+            $this->version,
+            true
+        );
 
-                wp_localize_script(
-                    $this->plugin_name . '-permissions',
-                    'wilayahSettings',
-                    array(
-                        'strings' => array(
-                            'confirmReset' => __('Yakin ingin mereset semua hak akses ke default?', 'wilayah-indonesia'),
-                            'saveSuccess' => __('Hak akses berhasil diperbarui.', 'wilayah-indonesia'),
-                            'saveError' => __('Terjadi kesalahan saat menyimpan hak akses.', 'wilayah-indonesia'),
-                            'networkError' => __('Gagal menghubungi server. Silakan coba lagi.', 'wilayah-indonesia')
-                        )
-                    )
-                );
+        wp_enqueue_script(
+            $this->plugin_name . '-province-form',
+            WILAYAH_INDONESIA_URL . 'assets/js/components/province-form.js',
+            array('jquery', $this->plugin_name . '-province-toast'),
+            $this->version,
+            true
+        );
 
-                // Localized data untuk DataTables
-                wp_localize_script(
-                    'wilayah-province', // handle yang sama dengan yang digunakan saat enqueue
-                    'wilayahData',      // nama variable yang akan diakses di JavaScript
-                    [
-                        'ajaxUrl' => admin_url('admin-ajax.php'),
-                        'nonce' => wp_create_nonce('wilayah_nonce'),
-                        'perPage' => get_option('posts_per_page'),
-                        'caps' => [
-                            'view' => current_user_can('view_province'),
-                            'edit' => current_user_can('edit_province'),
-                            'delete' => current_user_can('delete_province')
-                        ]
-                    ]
-                );                
-            }
-        }
+        // Main Province Script
+        wp_enqueue_script(
+            $this->plugin_name . '-province',
+            WILAYAH_INDONESIA_URL . 'assets/js/province.js',
+            array(
+                'jquery',
+                $this->plugin_name . '-toast',
+                $this->plugin_name . '-province-toast',
+                $this->plugin_name . '-province-datatable',
+                $this->plugin_name . '-province-form'
+            ),
+            $this->version,
+            true
+        );
+
+        // Localized data untuk DataTables dan capabilities
+        wp_localize_script(
+            $this->plugin_name . '-province',
+            'wilayahData',
+            [
+                'ajaxUrl' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('wilayah_nonce'),
+                'perPage' => get_option('posts_per_page'),
+                'caps' => [
+                    'view' => current_user_can('view_province'),
+                    'edit' => current_user_can('edit_province'),
+                    'delete' => current_user_can('delete_province')
+                ]
+            ]
+        );
     }
+    
     
     // Tambahkan method callback untuk DataTables
     public function handleProvinceDataTable() {
+        check_ajax_referer('wilayah_nonce', 'nonce');
+        
+        error_log('DataTables request received: ' . print_r($_POST, true));
+        
         $controller = new \WilayahIndonesia\Controllers\ProvinceController();
         $controller->handleDataTableRequest();
     }

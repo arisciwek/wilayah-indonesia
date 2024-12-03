@@ -2,234 +2,342 @@
 /**
  * File: ProvinceController.php
  * Path: /wilayah-indonesia/src/Controllers/ProvinceController.php
- * Description: Controller for handling all province-related operations
- * Last modified: 2024-11-23
+ * Description: Controller untuk mengelola provinsi dengan pengiriman data lengkap ke panel kanan
+ * Version: 2.0.0
+ * Last modified: 2024-12-03
+ * 
  * Changelog:
- *   - 2024-11-23: Initial creation
+ * 2.0.0 - 2024-12-03
+ * - Revisi load data provinsi untuk panel kanan
+ * - Optimasi pengiriman data setelah CRUD
+ * - Penyesuaian format response untuk DataTables
  */
 
 namespace WilayahIndonesia\Controllers;
 
-use WilayahIndonesia\Models\Province;
+use WilayahIndonesia\Models\ProvinceModel;
 use WilayahIndonesia\Validators\ProvinceValidator;
-use WilayahIndonesia\Cache\CacheManager;
 
 class ProvinceController {
     private $model;
     private $validator;
-    private $cache;
     
+    // Add cache constants
+    private const CACHE_GROUP = 'wilayah_indonesia';
+    private const CACHE_EXPIRY = 12 * HOUR_IN_SECONDS;
+
     public function __construct() {
-        $this->model = new Province();
+        $this->model = new ProvinceModel();
         $this->validator = new ProvinceValidator();
-        $this->cache = new CacheManager();
     }
-    
+
     /**
-     * Display the main province listing page
+     * Get formatted province data with caching
      */
-    public function index() {
-        // Check permission
-        if (!current_user_can('view_province_list')) {
-            wp_die(__('You do not have sufficient permissions to access this page.'));
-        }
+    private function getProvinceData($id) {
+        // Try cache first
+        $cache_key = "province_{$id}";
+        $data = wp_cache_get($cache_key, self::CACHE_GROUP);
         
-        // Load main template
-        require_once WILAYAH_INDONESIA_PATH . 'src/Views/templates/dashboard.php';
+        if (false !== $data) {
+            return $data;
+        }
+
+        // Cache miss, get from database
+        $province = $this->model->find($id);
+        if (!$province) {
+            return null;
+        }
+
+        // Format data
+        $data = $this->formatProvinceData($province);
+        
+        // Save to cache
+        wp_cache_set($cache_key, $data, self::CACHE_GROUP, self::CACHE_EXPIRY);
+        
+        return $data;
     }
-    
+
     /**
-     * Get province data for DataTables
+     * Invalidate cache after CRUD operations
      */
-    public function loadData() {
-        check_ajax_referer('wilayah_nonce', 'nonce');
-        
-        if (!current_user_can('view_province_list')) {
-            wp_send_json_error('Insufficient permissions');
+    private function invalidateCache($id) {
+        wp_cache_delete("province_{$id}", self::CACHE_GROUP);
+        wp_cache_delete('province_list', self::CACHE_GROUP);
+    }
+
+    public function show() {
+        try {
+            check_ajax_referer('wilayah_nonce', 'nonce');
+            $id = intval($_POST['id']);
+
+            // Get data (from cache or database)
+            $data = $this->getProvinceData($id);
+            if (!$data) {
+                wp_send_json_error([
+                    'message' => __('Province not found', 'wilayah-indonesia')
+                ]);
+            }
+
+            // Check permissions after getting data
+            if (!$this->canViewProvince($data['province'])) {
+                wp_send_json_error([
+                    'message' => __('Insufficient permissions', 'wilayah-indonesia')
+                ]);
+            }
+
+            wp_send_json_success(['data' => $data]);
+
+        } catch (Exception $e) {
+            error_log('Get province error: ' . $e->getMessage());
+            wp_send_json_error([
+                'message' => __('An error occurred', 'wilayah-indonesia')
+            ]);
         }
-        
-        $provinces = $this->model->getAll();
-        
-        // Filter based on permissions
-        if (!current_user_can('view_province')) {
-            $provinces = array_filter($provinces, function($province) {
-                return $province->created_by === get_current_user_id();
-            });
+    }
+
+    public function store() {
+        try {
+            check_ajax_referer('wilayah_nonce', 'nonce');
+
+            if (!current_user_can('create_province')) {
+                wp_send_json_error([
+                    'message' => __('Insufficient permissions', 'wilayah-indonesia')
+                ]);
+            }
+
+            $data = [
+                'name' => sanitize_text_field($_POST['name']),
+                'created_by' => get_current_user_id()
+            ];
+
+            $errors = $this->validator->validateCreate($data);
+            if (!empty($errors)) {
+                wp_send_json_error(['message' => $errors]);
+            }
+
+            $id = $this->model->create($data);
+            if (!$id) {
+                wp_send_json_error([
+                    'message' => __('Failed to create province', 'wilayah-indonesia')
+                ]);
+            }
+
+            // Get fresh data using cache-aware method
+            $formattedData = $this->getProvinceData($id);
+
+            wp_send_json_success([
+                'message' => __('Province created successfully', 'wilayah-indonesia'),
+                'id' => $id,
+                'data' => $formattedData
+            ]);
+
+        } catch (Exception $e) {
+            error_log('Create province error: ' . $e->getMessage());
+            wp_send_json_error([
+                'message' => __('An error occurred', 'wilayah-indonesia')
+            ]);
         }
-        
-        // Format for DataTables
-        $data = array_map(function($province) {
-            return [
+    }
+
+    public function update() {
+        try {
+            check_ajax_referer('wilayah_nonce', 'nonce');
+
+            $id = intval($_POST['id']);
+            $province = $this->model->find($id);
+
+            if (!$province) {
+                wp_send_json_error([
+                    'message' => __('Province not found', 'wilayah-indonesia')
+                ]);
+            }
+
+            if (!$this->canEditProvince($province)) {
+                wp_send_json_error([
+                    'message' => __('Insufficient permissions', 'wilayah-indonesia')
+                ]);
+            }
+
+            $data = [
+                'name' => sanitize_text_field($_POST['name'])
+            ];
+
+            $errors = $this->validator->validateUpdate($data, $id);
+            if (!empty($errors)) {
+                wp_send_json_error(['message' => $errors]);
+            }
+
+            if (!$this->model->update($id, $data)) {
+                wp_send_json_error([
+                    'message' => __('Failed to update province', 'wilayah-indonesia')
+                ]);
+            }
+
+            // Invalidate cache
+            $this->invalidateCache($id);
+
+            // Get fresh data using cache-aware method
+            $formattedData = $this->getProvinceData($id);
+
+            wp_send_json_success([
+                'message' => __('Province updated successfully', 'wilayah-indonesia'),
+                'id' => $id,
+                'data' => $formattedData
+            ]);
+
+        } catch (Exception $e) {
+            error_log('Update province error: ' . $e->getMessage());
+            wp_send_json_error([
+                'message' => __('An error occurred', 'wilayah-indonesia')
+            ]);
+        }
+    }
+
+    public function delete() {
+        try {
+            check_ajax_referer('wilayah_nonce', 'nonce');
+
+            $id = intval($_POST['id']);
+            $province = $this->model->find($id);
+
+            if (!$province) {
+                wp_send_json_error([
+                    'message' => __('Province not found', 'wilayah-indonesia')
+                ]);
+            }
+
+            if (!$this->canDeleteProvince($province)) {
+                wp_send_json_error([
+                    'message' => __('Insufficient permissions', 'wilayah-indonesia')
+                ]);
+            }
+
+            if (!$this->model->delete($id)) {
+                wp_send_json_error([
+                    'message' => __('Failed to delete province', 'wilayah-indonesia')
+                ]);
+            }
+
+            // Invalidate cache after successful delete
+            $this->invalidateCache($id);
+
+            wp_send_json_success([
+                'message' => __('Province deleted successfully', 'wilayah-indonesia')
+            ]);
+
+        } catch (Exception $e) {
+            error_log('Delete province error: ' . $e->getMessage());
+            wp_send_json_error([
+                'message' => __('An error occurred', 'wilayah-indonesia')
+            ]);
+        }
+    }
+
+    /**
+     * Format data provinsi untuk panel kanan
+     */
+    private function formatProvinceData($province) {
+        if (!$province) return null;
+
+        return [
+            'province' => [
                 'id' => $province->id,
                 'name' => esc_html($province->name),
                 'regency_count' => $this->model->getRegencyCount($province->id),
-                'actions' => $this->generateActionButtons($province)
-            ];
-        }, $provinces);
-        
-        wp_send_json_success($data);
+                'created_by' => get_user_by('id', $province->created_by)->display_name,
+                'created_at' => date('d M Y H:i', strtotime($province->created_at)),
+                'updated_at' => date('d M Y H:i', strtotime($province->updated_at))
+            ]
+        ];
     }
-    
+
     /**
-     * Show province details
+     * Handle DataTables request
      */
-    public function show($id) {
-        check_ajax_referer('wilayah_nonce', 'nonce');
-        
-        if (!$this->validator->validateView($id)) {
-            wp_send_json_error('Invalid province ID');
-        }
-        
-        // Try cache first
-        $province = $this->cache->getProvince($id);
-        if (!$province) {
-            $province = $this->model->find($id);
-            if ($province) {
-                $this->cache->setProvince($id, $province);
+    public function handleDataTableRequest() {
+        try {
+            check_ajax_referer('wilayah_nonce', 'nonce');
+            
+            if (!current_user_can('view_province_list')) {
+                wp_send_json_error([
+                    'message' => __('Insufficient permissions', 'wilayah-indonesia')
+                ]);
             }
-        }
-        
-        if (!$province) {
-            wp_send_json_error('Province not found');
-        }
-        
-        // Check permission
-        if (!$this->canViewProvince($province)) {
-            wp_send_json_error('Insufficient permissions');
-        }
-        
-        wp_send_json_success([
-            'province' => $province,
-            'regency_count' => $this->model->getRegencyCount($id)
-        ]);
-    }
-    
-    /**
-     * Create new province
-     */
-    public function store() {
-        check_ajax_referer('wilayah_nonce', 'nonce');
-        
-        if (!current_user_can('create_province')) {
-            wp_send_json_error('Insufficient permissions');
-        }
-        
-        $data = [
-            'name' => sanitize_text_field($_POST['name']),
-            'created_by' => get_current_user_id()
-        ];
-        
-        $errors = $this->validator->validateCreate($data);
-        if (!empty($errors)) {
-            wp_send_json_error($errors);
-        }
-        
-        $id = $this->model->create($data);
-        if (!$id) {
-            wp_send_json_error('Failed to create province');
-        }
-        
-        // Clear cache
-        $this->cache->invalidateProvinceCache($id);
-        
-        wp_send_json_success([
-            'message' => 'Province created successfully',
-            'id' => $id
-        ]);
-    }
-    
-    /**
-     * Update province
-     */
-    public function update($id) {
-        check_ajax_referer('wilayah_nonce', 'nonce');
-        
-        $province = $this->model->find($id);
-        if (!$province) {
-            wp_send_json_error('Province not found');
-        }
-        
-        if (!$this->canEditProvince($province)) {
-            wp_send_json_error('Insufficient permissions');
-        }
-        
-        $data = [
-            'name' => sanitize_text_field($_POST['name'])
-        ];
-        
-        $errors = $this->validator->validateUpdate($data, $id);
-        if (!empty($errors)) {
-            wp_send_json_error($errors);
-        }
-        
-        if (!$this->model->update($id, $data)) {
-            wp_send_json_error('Failed to update province');
-        }
-        
-        // Clear cache
-        $this->cache->invalidateProvinceCache($id);
-        
-        wp_send_json_success([
-            'message' => 'Province updated successfully',
-            'id' => $id
-        ]);
-    }
-    
-    /**
-     * Delete province
-     */
-    public function delete($id) {
-        check_ajax_referer('wilayah_nonce', 'nonce');
-        
-        $province = $this->model->find($id);
-        if (!$province) {
-            wp_send_json_error('Province not found');
-        }
-        
-        if (!$this->canDeleteProvince($province)) {
-            wp_send_json_error('Insufficient permissions');
-        }
-        
-        if (!$this->model->delete($id)) {
-            wp_send_json_error('Failed to delete province');
-        }
-        
-        // Clear cache
-        $this->cache->invalidateProvinceCache($id);
-        
-        wp_send_json_success('Province deleted successfully');
-    }
-    
-    /**
-     * Generate action buttons HTML
-     */
-    private function generateActionButtons($province) {
-        $buttons = [];
-        
-        if ($this->canViewProvince($province)) {
-            $buttons[] = sprintf(
-                '<button class="view-province" data-id="%d" title="View"><i class="fas fa-eye"></i></button>',
-                $province->id
+
+            $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
+            $start = isset($_POST['start']) ? intval($_POST['start']) : 0;
+            $length = isset($_POST['length']) ? intval($_POST['length']) : 10;
+            $search = isset($_POST['search']['value']) ? sanitize_text_field($_POST['search']['value']) : '';
+
+            $result = $this->model->getDataTableData(
+                $start,
+                $length,
+                $search,
+                'name',
+                'ASC'
             );
+
+            // Format data untuk DataTables dengan action buttons
+            $formatted_data = array_map(function($row) {
+                return [
+                    'id' => $row->id,
+                    'name' => esc_html($row->name),
+                    'regency_count' => (int)$row->regency_count,
+                    'actions' => $this->generateActionButtons($row)
+                ];
+            }, $result['data']);
+
+            wp_send_json([
+                'draw' => $draw,
+                'recordsTotal' => $this->model->getTotalCount(),
+                'recordsFiltered' => $result['filtered_count'],
+                'data' => $formatted_data
+            ]);
+
+        } catch (Exception $e) {
+            error_log('DataTables error: ' . $e->getMessage());
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
-        
-        if ($this->canEditProvince($province)) {
-            $buttons[] = sprintf(
-                '<button class="edit-province" data-id="%d" title="Edit"><i class="fas fa-edit"></i></button>',
-                $province->id
-            );
-        }
-        
-        if ($this->canDeleteProvince($province)) {
-            $buttons[] = sprintf(
-                '<button class="delete-province" data-id="%d" title="Delete"><i class="fas fa-trash"></i></button>',
-                $province->id
-            );
-        }
-        
-        return implode(' ', $buttons);
     }
-    
+
+    /**
+     * Handle direct URL access with province#id
+     */
+    public function handleDirectAccess() {
+        try {
+            // Get ID from URL hash via AJAX post data
+            $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+            if (!$id) {
+                wp_send_json_error(['message' => __('Invalid province ID', 'wilayah-indonesia')]);
+            }
+
+            // Check user permission
+            if (!current_user_can('view_province_list')) {
+                wp_send_json_error(['message' => __('Insufficient permissions', 'wilayah-indonesia')]);
+            }
+
+            // Load province data
+            $province = $this->model->find($id);
+            if (!$province) {
+                wp_send_json_error(['message' => __('Province not found', 'wilayah-indonesia')]);
+            }
+
+            // Check specific view permission
+            if (!$this->canViewProvince($province)) {
+                wp_send_json_error(['message' => __('You do not have permission to view this province', 'wilayah-indonesia')]);
+            }
+
+            // Format and return data
+            $formattedData = $this->formatProvinceData($province);
+            wp_send_json_success(['data' => $formattedData]);
+
+        } catch (Exception $e) {
+            error_log('Direct access error: ' . $e->getMessage());
+            wp_send_json_error(['message' => __('An error occurred while loading province', 'wilayah-indonesia')]);
+        }
+    }
+
     /**
      * Permission checks
      */
@@ -237,83 +345,53 @@ class ProvinceController {
         return current_user_can('view_province') || 
                (current_user_can('view_own_province') && $province->created_by === get_current_user_id());
     }
-    
+
     private function canEditProvince($province) {
         return current_user_can('edit_province') || 
                (current_user_can('edit_own_province') && $province->created_by === get_current_user_id());
     }
-    
+
     private function canDeleteProvince($province) {
         return current_user_can('delete_province') || 
                (current_user_can('delete_own_province') && $province->created_by === get_current_user_id());
     }
 
     /**
-     * Handle DataTables AJAX request for province listing
+     * Generate action buttons for DataTables
      */
-    public function handleDataTableRequest() {
-        check_ajax_referer('wilayah_nonce', 'nonce');
+    private function generateActionButtons($province) {
+        $buttons = [];
         
-        if (!current_user_can('view_province_list')) {
-            wp_send_json_error([
-                'message' => __('Insufficient permissions', 'wilayah-indonesia')
-            ]);
-        }
-
-        // Get DataTables parameters
-        $draw = isset($_POST['draw']) ? intval($_POST['draw']) : 1;
-        $start = isset($_POST['start']) ? intval($_POST['start']) : 0;
-        $length = isset($_POST['length']) ? intval($_POST['length']) : 10;
-        $search = isset($_POST['search']['value']) ? sanitize_text_field($_POST['search']['value']) : '';
-        
-        // Get ordering
-        $order_column = 'name'; // default
-        $order_dir = 'ASC';
-        
-        if (isset($_POST['order'][0])) {
-            $columns = ['name', 'regency_count'];
-            $column_index = intval($_POST['order'][0]['column']);
-            if (isset($columns[$column_index])) {
-                $order_column = $columns[$column_index];
-                $order_dir = strtoupper($_POST['order'][0]['dir']) === 'DESC' ? 'DESC' : 'ASC';
-            }
-        }
-
-        try {
-            // Get data from model
-            $result = $this->model->getDataTableData(
-                $start,
-                $length,
-                $search,
-                $order_column,
-                $order_dir
+        if (current_user_can('view_province')) {
+            $buttons[] = sprintf(
+                '<button type="button" class="button button-small view-province" data-id="%d" title="%s">
+                    <span class="dashicons dashicons-visibility"></span>
+                </button>',
+                $province->id,
+                esc_attr__('View Details', 'wilayah-indonesia')
             );
-
-            // Format data for DataTables
-            $data = [];
-            foreach ($result['data'] as $province) {
-                if ($this->canViewProvince($province)) {
-                    $data[] = [
-                        'id' => $province->id,
-                        'name' => esc_html($province->name),
-                        'regency_count' => $this->model->getRegencyCount($province->id),
-                        'actions' => $this->generateActionButtons($province)
-                    ];
-                }
-            }
-
-            wp_send_json_success([
-                'draw' => $draw,
-                'recordsTotal' => $this->model->getTotalCount(),
-                'recordsFiltered' => $result['filtered_count'],
-                'data' => $data
-            ]);
-
-        } catch (Exception $e) {
-            wp_send_json_error([
-                'message' => $e->getMessage()
-            ]);
         }
+        
+        if ($this->canEditProvince($province)) {
+            $buttons[] = sprintf(
+                '<button type="button" class="button button-small edit-province" data-id="%d" title="%s">
+                    <span class="dashicons dashicons-edit"></span>
+                </button>',
+                $province->id,
+                esc_attr__('Edit', 'wilayah-indonesia')
+            );
+        }
+        
+        if ($this->canDeleteProvince($province)) {
+            $buttons[] = sprintf(
+                '<button type="button" class="button button-small delete-province" data-id="%d" title="%s">
+                    <span class="dashicons dashicons-trash"></span>
+                </button>',
+                $province->id,
+                esc_attr__('Delete', 'wilayah-indonesia')
+            );
+        }
+        
+        return implode(' ', $buttons);
     }
-    
 }
