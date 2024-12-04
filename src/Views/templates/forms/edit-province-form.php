@@ -28,14 +28,15 @@
 defined('ABSPATH') || exit;
 ?>
 
-<div id="edit-province-modal" class="wi-modal">
-    <div class="wi-modal-content">
-        <div class="wi-modal-header">
-            <h3><?php _e('Edit Provinsi', 'wilayah-indonesia'); ?></h3>
-            <button type="button" class="wi-modal-close" aria-label="Close">&times;</button>
-        </div>
 
-        <div class="wi-modal-body">
+
+<div id="edit-province-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Tambah Provinsi</h3>
+            <button type="button" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-content">
             <form id="edit-province-form" method="post">
                 <?php wp_nonce_field('wilayah_nonce'); ?>
                 <input type="hidden" id="province-id" name="id" value="">

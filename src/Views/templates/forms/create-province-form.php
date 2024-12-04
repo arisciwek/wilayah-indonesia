@@ -32,14 +32,13 @@
 defined('ABSPATH') || exit;
 ?>
 
-<div id="create-province-modal" class="wi-modal">
-    <div class="wi-modal-content">
-        <div class="wi-modal-header">
-            <h3><?php _e('Tambah Provinsi', 'wilayah-indonesia'); ?></h3>
-            <button type="button" class="wi-modal-close" aria-label="Close">&times;</button>
+<div id="create-province-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Tambah Provinsi</h3>
+            <button type="button" class="modal-close" aria-label="Close">&times;</button>
         </div>
-
-        <div class="wi-modal-body">
+        <div class="modal-content">
             <form id="create-province-form" method="post">
                 <?php wp_nonce_field('wilayah_nonce'); ?>
                 <input type="hidden" name="action" value="create_province">
@@ -69,3 +68,4 @@ defined('ABSPATH') || exit;
         </div>
     </div>
 </div>
+
