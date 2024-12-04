@@ -3,21 +3,17 @@
  * File: SettingsModel.php
  * Path: /wilayah-indonesia/src/Models/Settings/SettingsModel.php
  * Description: Model untuk mengelola pengaturan umum plugin
- * Version: 1.2.0
- * Last modified: 2024-11-28 08:45:00
+ * Version: 1.2.1
+ * Last modified: 2024-12-03
  * 
  * Changelog:
+ * v1.2.1 - 2024-12-03
+ * - Changed sanitizeOptions visibility to public
+ * - Added proper documentation blocks
+ * 
  * v1.2.0 - 2024-11-28
  * - Mengganti semua constants menjadi properti class
  * - Perbaikan penggunaan properti di seluruh method
- * 
- * v1.1.0 - 2024-11-25
- * - Added getSettings method untuk mendapatkan semua pengaturan
- * - Added registerSettings method untuk mendaftarkan pengaturan ke WordPress
- * - Added saveGeneralSettings method untuk menyimpan pengaturan umum
- * 
- * v1.0.0 - 2024-11-23
- * - Initial creation
  */
 
 namespace WilayahIndonesia\Models\Settings;
@@ -39,6 +35,8 @@ class SettingsModel {
 
     /**
      * Get all settings termasuk default values
+     *
+     * @return array
      */
     public function getSettings(): array {
         return [
@@ -53,33 +51,36 @@ class SettingsModel {
      * Register semua settings ke WordPress
      */
     public function registerSettings() {
+        // Register setting di settings group
         register_setting(
-            $this->option_group,
-            $this->general_options,
+            'wilayah_indonesia_options', // Option group
+            'wilayah_indonesia_settings', // Option name
             [
                 'type' => 'array',
-                'sanitize_callback' => [$this, 'sanitizeOptions']
+                'sanitize_callback' => [$this, 'sanitizeOptions'],
+                'default' => $this->default_options
             ]
         );
 
-        // General Settings Section
+        // General Section
         add_settings_section(
             'wilayah_general_section',
             __('Pengaturan Umum', 'wilayah-indonesia'),
             [$this, 'renderGeneralSection'],
-            $this->option_group
+            'wilayah_indonesia'
         );
 
-        // Add settings fields
+        // Add Fields
         add_settings_field(
             'records_per_page',
             __('Data Per Halaman', 'wilayah-indonesia'),
             [$this, 'renderNumberField'],
-            $this->option_group,
+            'wilayah_indonesia',
             'wilayah_general_section',
             [
-                'id' => 'records_per_page',
-                'desc' => __('Jumlah data yang ditampilkan per halaman', 'wilayah-indonesia')
+                'label_for' => 'records_per_page',
+                'field_id' => 'records_per_page',
+                'desc' => __('Jumlah data yang ditampilkan per halaman (5-100)', 'wilayah-indonesia')
             ]
         );
 
@@ -87,25 +88,66 @@ class SettingsModel {
             'enable_caching',
             __('Aktifkan Cache', 'wilayah-indonesia'),
             [$this, 'renderCheckboxField'],
-            $this->option_group,
+            'wilayah_indonesia',
             'wilayah_general_section',
             [
-                'id' => 'enable_caching',
+                'label_for' => 'enable_caching',
+                'field_id' => 'enable_caching',
                 'desc' => __('Aktifkan caching untuk performa lebih baik', 'wilayah-indonesia')
             ]
         );
-    }
 
+        add_settings_field(
+            'cache_duration',
+            __('Durasi Cache', 'wilayah-indonesia'),
+            [$this, 'renderSelectField'],
+            'wilayah_indonesia',
+            'wilayah_general_section',
+            [
+                'label_for' => 'cache_duration',
+                'field_id' => 'cache_duration',
+                'desc' => __('Berapa lama cache disimpan', 'wilayah-indonesia'),
+                'options' => [
+                    3600 => __('1 jam', 'wilayah-indonesia'),
+                    7200 => __('2 jam', 'wilayah-indonesia'),
+                    21600 => __('6 jam', 'wilayah-indonesia'),
+                    43200 => __('12 jam', 'wilayah-indonesia'),
+                    86400 => __('24 jam', 'wilayah-indonesia')
+                ]
+            ]
+        );
+    }
+    
     /**
      * Get general options dengan default values
+     *
+     * @return array
      */
     public function getGeneralOptions(): array {
-        $options = get_option($this->general_options, []);
-        return wp_parse_args($options, $this->default_options);
+        $cache_key = 'wilayah_indonesia_general_options';
+        $cache_group = 'wilayah_indonesia';
+        
+        // Try to get from cache first
+        $options = wp_cache_get($cache_key, $cache_group);
+        
+        if (false === $options) {
+            // Not in cache, get from database
+            $options = get_option($this->general_options, []);
+            
+            // Parse with defaults
+            $options = wp_parse_args($options, $this->default_options);
+            
+            // Store in cache for next time
+            wp_cache_set($cache_key, $options, $cache_group);
+        }
+        
+        return $options;
     }
 
     /**
      * Get API related settings
+     *
+     * @return array
      */
     private function getApiSettings(): array {
         $options = $this->getGeneralOptions();
@@ -117,6 +159,8 @@ class SettingsModel {
 
     /**
      * Get display related settings
+     *
+     * @return array
      */
     private function getDisplaySettings(): array {
         $options = $this->getGeneralOptions();
@@ -128,6 +172,8 @@ class SettingsModel {
 
     /**
      * Get system related settings
+     *
+     * @return array
      */
     private function getSystemSettings(): array {
         $options = $this->getGeneralOptions();
@@ -137,21 +183,48 @@ class SettingsModel {
             'log_enabled' => $options['log_enabled']
         ];
     }
-
+    
     /**
      * Save general settings dengan validasi
+     *
+     * @param array $input
+     * @return bool
      */
     public function saveGeneralSettings(array $input): bool {
-        if (!is_array($input)) {
+        if (empty($input)) {
             return false;
         }
 
+        // Clear cache first
+        wp_cache_delete('wilayah_indonesia_general_options', 'wilayah_indonesia');
+
+        // Sanitize input
         $sanitized = $this->sanitizeOptions($input);
-        return $this->updateGeneralOptions($sanitized);
+        
+        // Only update if we have valid data
+        if (!empty($sanitized)) {
+            $result = update_option($this->general_options, $sanitized);
+            
+            // Re-cache the new values if update successful
+            if ($result) {
+                wp_cache_set(
+                    'wilayah_indonesia_general_options',
+                    $sanitized,
+                    'wilayah_indonesia'
+                );
+            }
+            
+            return $result;
+        }
+        
+        return false;
     }
 
     /**
      * Update general options
+     *
+     * @param array $new_options
+     * @return bool
      */
     public function updateGeneralOptions(array $new_options): bool {
         $options = $this->sanitizeOptions($new_options);
@@ -165,8 +238,21 @@ class SettingsModel {
 
     /**
      * Sanitize all option values
-     */
-    private function sanitizeOptions(array $options): array {
+     * 
+     * @param array $options
+     * @return array
+     *//**
+ * Sanitize all option values
+ * 
+ * @param array|null $options
+ * @return array
+ */
+    public function sanitizeOptions(?array $options = []): array {
+        // If options is null, use empty array
+        if ($options === null) {
+            $options = [];
+        }
+        
         $sanitized = [];
         
         // Sanitize records per page
@@ -216,30 +302,38 @@ class SettingsModel {
             $sanitized['log_enabled'] = (bool) $options['log_enabled'];
         }
 
-        return $sanitized;
+        // Merge with default options to ensure all required keys exist
+        return wp_parse_args($sanitized, $this->default_options);
     }
 
     /**
      * Delete all plugin options
+     *
+     * @return bool
      */
     public function deleteOptions(): bool {
         return delete_option($this->general_options);
     }
 
     /**
-     * Render methods for settings fields
+     * Render general section description
      */
     public function renderGeneralSection() {
         echo '<p>' . __('Pengaturan umum untuk plugin Wilayah Indonesia.', 'wilayah-indonesia') . '</p>';
     }
 
+    /**
+     * Render number field
+     * 
+     * @param array $args
+     */
     public function renderNumberField($args) {
         $options = $this->getGeneralOptions();
-        $value = $options[$args['id']] ?? '';
+        $value = $options[$args['field_id']] ?? '';
         
         printf(
             '<input type="number" id="%1$s" name="wilayah_indonesia_general_options[%1$s]" value="%2$s" class="regular-text">',
-            esc_attr($args['id']),
+            esc_attr($args['field_id']),
             esc_attr($value)
         );
         
@@ -248,15 +342,50 @@ class SettingsModel {
         }
     }
 
+    /**
+     * Render checkbox field
+     *
+     * @param array $args
+     */
     public function renderCheckboxField($args) {
         $options = $this->getGeneralOptions();
-        $checked = isset($options[$args['id']]) ? checked($options[$args['id']], true, false) : '';
+        $checked = isset($options[$args['field_id']]) ? checked($options[$args['field_id']], true, false) : '';
         
         printf(
-            '<label><input type="checkbox" id="%1$s" name="wilayah_indonesia_general_options[%1$s]" value="1" %2$s></label>',
-            esc_attr($args['id']),
+            '<input type="checkbox" id="%1$s" name="wilayah_indonesia_general_options[%1$s]" value="1" %2$s>',
+            esc_attr($args['field_id']),
             $checked
         );
+        
+        if (isset($args['desc'])) {
+            printf('<p class="description">%s</p>', esc_html($args['desc']));
+        }
+    }
+
+    /**
+     * Render select field
+     *
+     * @param array $args
+     */
+    public function renderSelectField($args) {
+        $options = $this->getGeneralOptions();
+        $value = $options[$args['field_id']] ?? '';
+        
+        printf('<select id="%s" name="wilayah_indonesia_general_options[%s]">', 
+            esc_attr($args['field_id']),
+            esc_attr($args['field_id'])
+        );
+        
+        foreach ($args['options'] as $key => $label) {
+            printf(
+                '<option value="%s" %s>%s</option>',
+                esc_attr($key),
+                selected($value, $key, false),
+                esc_html($label)
+            );
+        }
+        
+        echo '</select>';
         
         if (isset($args['desc'])) {
             printf('<p class="description">%s</p>', esc_html($args['desc']));

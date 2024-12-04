@@ -2,21 +2,13 @@
 /**
  * File: general-tab.php
  * Path: /wilayah-indonesia/src/Views/templates/settings/tabs/general-tab.php 
- * Description: Tab pengaturan umum plugin
- * Version: 3.0.0
- * Last modified: 2024-11-28 11:45:00
  */
 
 defined('ABSPATH') || exit;
 
-$default_options = [
-    'records_per_page' => 15,
-    'enable_caching' => true,
-    'cache_duration' => 43200,
-    'datatables_language' => 'id'
-];
-
-$options = wp_parse_args($settings['general'] ?? [], $default_options);
+// Get settings from model instead of directly parsing
+$settings = new \WilayahIndonesia\Models\Settings\SettingsModel();
+$options = $settings->getGeneralOptions();
 ?>
 
 <div class="wilayah-settings-tab general-settings">
@@ -117,6 +109,6 @@ $options = wp_parse_args($settings['general'] ?? [], $default_options);
             </tr>
         </table>
 
-        <?php submit_button(); ?>
+        <?php submit_button(__('Simpan Pengaturan', 'wilayah-indonesia')); ?>
     </form>
 </div>

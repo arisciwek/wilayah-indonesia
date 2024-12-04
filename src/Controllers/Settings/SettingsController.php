@@ -45,7 +45,7 @@ class SettingsController {
 
         // Register handler untuk admin_post dan ajax
         add_action('wp_ajax_update_wilayah_permissions', [$this, 'handleAjaxPermissionUpdate']);
-
+        add_action('admin_post_wilayah_save_settings', [$this, 'handleSaveSettings']);
         // Register handler untuk admin_post
         // add_action('admin_post_update_wilayah_permissions', [$this, 'handlePermissionUpdate']);
     }
@@ -207,5 +207,47 @@ class SettingsController {
             ]);
         }
     }
-    
+
+    /**
+     *
+     * @param array $input
+     * @return bool
+     *
+     * Handle form submission untuk settings
+     */
+    public function handleSaveSettings() {
+        // Verify nonce
+        check_admin_referer('wilayah_settings_nonce');
+        
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Unauthorized access', 'wilayah-indonesia')); 
+        }
+
+        $tab = isset($_POST['tab']) ? sanitize_key($_POST['tab']) : 'general';
+        $updated = false;
+        
+        switch($tab) {
+            case 'general':
+                // Get settings data from POST
+                $settings = isset($_POST['general']) ? (array) $_POST['general'] : [];
+                
+                // Log for debugging
+                error_log('Saving settings: ' . print_r($settings, true));
+                
+                // Try to save
+                $updated = $this->settings_model->saveGeneralSettings($settings);
+                
+                // Log result
+                error_log('Save result: ' . ($updated ? 'success' : 'failed'));
+                break;
+        }
+        
+        // Redirect back with status
+        wp_safe_redirect(add_query_arg([
+            'page' => self::SETTINGS_PAGE_SLUG,
+            'tab' => $tab,
+            'settings-updated' => $updated ? 'true' : 'false'
+        ], admin_url('admin.php')));
+        exit;
+    }
 }
