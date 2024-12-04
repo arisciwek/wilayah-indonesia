@@ -32,32 +32,78 @@
  * 
  * Last modified: 2024-12-03 16:45:00
  */
+/**
+ * Province Management Interface
+ *
+ * @package     Wilayah_Indonesia
+ * @subpackage  Assets/JS
+ * @version     1.0.0
+ * @author      arisciwek
+ * 
+ * Path: /wilayah-indonesia/assets/js/province.js
+ * 
+ * Description: Main JavaScript handler untuk halaman provinsi.
+ *              Mengatur interaksi antar komponen seperti DataTable,
+ *              form, panel kanan, dan notifikasi.
+ *              Includes state management dan event handling.
+ *              Terintegrasi dengan WordPress AJAX API.
+ * 
+ * Dependencies:
+ * - jQuery
+ * - ProvinceDataTable
+ * - ProvinceForm 
+ * - ProvinceToast
+ * - WordPress AJAX
+ * 
+ * Changelog:
+ * 1.0.0 - 2024-12-03
+ * - Added proper jQuery no-conflict handling
+ * - Added panel kanan integration
+ * - Added CRUD event handlers
+ * - Added toast notifications
+ * - Improved error handling
+ * - Added loading states
+ * 
+ * Last modified: 2024-12-03 16:45:00
+ */
 (function($) {
     'use strict';
 
     const Province = {
         init() {
-            // Initialize components
-            ProvinceDataTable.init();
-            ProvinceForm.init();
-            ProvinceToast.init();
-            
-            this.bindEvents();
-            this.checkInitialHash();
+            // First check if all required components exist
+            if (!window.ProvinceDataTable || !window.CreateProvinceForm || !window.EditProvinceForm || !window.ProvinceToast) {
+                // If any component is missing, retry after a short delay
+                setTimeout(() => this.init(), 100);
+                return;
+            }
+
+            // Initialize components in correct order
+            try {
+                ProvinceToast.init();
+                CreateProvinceForm.init();
+                EditProvinceForm.init();
+                ProvinceDataTable.init();
+                
+                this.bindEvents();
+                this.checkInitialHash();
+            } catch (error) {
+                console.error('Error initializing Province:', error);
+            }
         },
 
         bindEvents() {
             // Panel toggle event
-            $('.wi-province-close-panel').on('click', () => this.closePanel());
+            $('.wi-province-close-panel').off('click').on('click', () => this.closePanel());
             
             // Tab navigation
-            $('.nav-tab').on('click', (e) => {
+            $('.nav-tab').off('click').on('click', (e) => {
                 e.preventDefault();
                 this.switchTab($(e.currentTarget).data('tab'));
             });
             
             // Add province button
-            $('#add-province-btn').on('click', () => this.showCreateForm());
+            $('#add-province-btn').off('click').on('click', () => CreateProvinceForm.showForm());
         },
 
         checkInitialHash() {
@@ -73,14 +119,6 @@
             
             $('.tab-content').removeClass('active');
             $(`#${tabId}`).addClass('active');
-        },
-
-        showCreateForm() {
-            // Reset any existing form
-            ProvinceForm.resetForm($('#create-province-form'));
-            
-            // Show modal with animation
-            $('#create-province-modal').fadeIn(300);
         },
 
         displayData(data, editMode = false) {
@@ -104,6 +142,11 @@
         },
 
         switchToEditMode(data = null) {
+            if (!window.EditProvinceForm) {
+                console.error('EditProvinceForm not found');
+                return;
+            }
+
             const $form = $('#edit-province-form');
             if (data) {
                 $form.find('#province-id').val(data.province.id);
@@ -166,21 +209,20 @@
         }
     };
 
-    // Initialize when document is ready
-    $(document).ready(() => {
-        window.Province = Province;
-        Province.init();
-    });
-    /*
-    $(document).ready(() => {
-        window.Province = Province;
-        Province.init();
-        // Inisialisasi ProvinceDataTable setelah Province
-        if (window.ProvinceDataTable) {
-            ProvinceDataTable.init(); 
-        }
-    });
+    // Initialize when document is ready and ensure jQuery is available
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeProvince);
+    } else {
+        initializeProvince();
+    }
 
-    */
+    function initializeProvince() {
+        if (window.jQuery) {
+            window.Province = Province;
+            Province.init();
+        } else {
+            setTimeout(initializeProvince, 50);
+        }
+    }
 
 })(jQuery);

@@ -60,18 +60,10 @@
     
     const ProvinceDataTable = {
         table: null,
-        initialized: false,  // Flag untuk tracking initialization
+        initialized: false,
 
         init() {
-            /*
-
-            if (this.initialized) {
-                return;  // Prevent double initialization
-            }
-            */
-
             if (!window.Province) {
-                // Tunggu Province terinisialisasi
                 setTimeout(() => this.init(), 100);
                 return;
             }
@@ -114,7 +106,6 @@
                         };
                     },
                     error: (xhr, error, thrown) => {
-                        console.log('DataTables error:', xhr.responseText); // Tambahkan log detail
                         ProvinceToast.error('Gagal memuat data provinsi');
                         console.error('DataTables Error:', error);
                     }
@@ -143,21 +134,19 @@
                 dom: '<"top"lf>rt<"bottom"ip><"clear">',
                 language: indonesianLanguage,
                 drawCallback: () => {
-                    // Re-bind action buttons after table redraw
                     this.bindActionButtons();
-                    // Highlight row if matches current hash
                     this.highlightCurrentRow();
                 }
             });
         },
 
         bindEvents() {
-            // Unbind existing events first to prevent duplicates
+            // Unbind existing events
             $(window).off('hashchange.province');
             $(document).off('panel:closed.province province:created.province province:updated.province province:deleted.province');
             $('#provinces-table').off('click', '.view-province, .edit-province, .delete-province');
             
-            // Hash change event for direct URL access
+            // Hash change event
             $(window).on('hashchange.province', () => this.handleHashChange());
             
             // Panel state changes
@@ -181,7 +170,7 @@
         bindActionButtons() {
             const $table = $('#provinces-table');
             
-            // Remove existing handlers first
+            // Remove existing handlers
             $table.off('click', '.view-province, .edit-province, .delete-province');
             
             // View button
@@ -190,12 +179,17 @@
                 this.loadProvincePanel(id);
             });
             
-            // Edit button - show form modal instead of panel
+            // Edit button
             $table.on('click', '.edit-province', (e) => {
                 e.preventDefault();
                 const id = $(e.currentTarget).data('id');
                 
-                // Load province data and show in edit form
+                if (!window.EditProvinceForm) {
+                    console.error('EditProvinceForm not found');
+                    ProvinceToast.error('Sistem error: Form editor tidak tersedia');
+                    return;
+                }
+                
                 $.ajax({
                     url: wilayahData.ajaxUrl,
                     type: 'POST',
@@ -206,7 +200,7 @@
                     },
                     success: (response) => {
                         if (response.success) {
-                            ProvinceForm.showEditForm(response.data);
+                            EditProvinceForm.showEditForm(response.data);
                         } else {
                             ProvinceToast.error(response.data?.message || 'Gagal memuat data provinsi');
                         }
@@ -215,26 +209,25 @@
                 });
             });
             
-            // Delete button 
+            // Delete button
             $table.on('click', '.delete-province', (e) => {
                 const id = $(e.currentTarget).data('id');
-                Province.showDeleteConfirmation(id);
+                if (window.Province) {
+                    Province.showDeleteConfirmation(id);
+                }
             });
         },
 
         loadProvincePanel(id, data = null, editMode = false) {
             if (!id) return;
 
-            // Update URL first
             window.location.hash = id;
 
-            // If we have data (from create/update), use it directly
             if (data) {
                 Province.displayData(data, editMode);
                 return;
             }
 
-            // Otherwise load via AJAX
             $.ajax({
                 url: wilayahData.ajaxUrl,
                 type: 'POST',

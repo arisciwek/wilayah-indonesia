@@ -73,7 +73,16 @@ class Wilayah_Indonesia_Dependencies {
             // Components
             wp_enqueue_script('province-toast', WILAYAH_INDONESIA_URL . 'assets/js/components/province-toast.js', ['jquery'], $this->version, true);
             wp_enqueue_script('province-datatable', WILAYAH_INDONESIA_URL . 'assets/js/components/province-datatable.js', ['jquery', 'datatables', 'province-toast'], $this->version, true);
+            /*
             wp_enqueue_script('province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
+            */
+
+
+            wp_enqueue_script('province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/create-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
+            wp_enqueue_script('province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/edit-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
+
+
+
             
             // Main province script - load last
             wp_enqueue_script('province', WILAYAH_INDONESIA_URL . 'assets/js/province.js', ['jquery', 'province-toast', 'province-datatable', 'province-form'], $this->version, true);

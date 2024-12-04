@@ -278,7 +278,11 @@
             if (window.Province) {
                 Province.switchToViewMode();
             }
-        }
+        },
+        switchToViewMode() {
+            $('#edit-mode').hide();
+            $('#view-mode').show();
+        },
     };
 
     // Initialize when document is ready
