@@ -16,6 +16,7 @@ class WilayahIndonesia {
     private $loader;
     private $plugin_name;
     private $version;
+    private $province_controller;
     
     public static function getInstance() {
         if (null === self::$instance) {
@@ -53,7 +54,21 @@ class WilayahIndonesia {
         // Inisialisasi menu
         $menu_manager = new \WilayahIndonesia\Controllers\MenuManager($this->plugin_name, $this->version);
         $this->loader->add_action('init', $menu_manager, 'init');
-    }
+    
+		$this->initControllers(); // Tambahkan ini
+		}
+
+	private function initControllers() {
+		// Inisialisasi ProvinceController
+		$this->province_controller = new \WilayahIndonesia\Controllers\ProvinceController();
+		
+		// Register AJAX hooks        
+        add_action('wp_ajax_handle_province_datatable', [$this->province_controller, 'handleDataTableRequest']);
+        add_action('wp_ajax_nopriv_handle_province_datatable', [$this->province_controller, 'handleDataTableRequest']);
+        // Tambahkan ini
+        add_action('wp_ajax_get_province', [$this->province_controller, 'show']);
+        add_action('wp_ajax_nopriv_get_province', [$this->province_controller, 'show']); 
+	}
 
     private function includeDependencies() {
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-loader.php';
@@ -66,8 +81,13 @@ class WilayahIndonesia {
 
         require_once WILAYAH_INDONESIA_PATH . 'src/Models/Settings/SettingsModel.php';
         require_once WILAYAH_INDONESIA_PATH . 'src/Models/Settings/PermissionModel.php';
-
         new \WilayahIndonesia\Controllers\Settings\SettingsController();
+
+		require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/ProvinceController.php';
+		require_once WILAYAH_INDONESIA_PATH . 'src/Models/ProvinceModel.php';
+		
+		require_once WILAYAH_INDONESIA_PATH . 'src/Validators/ProvinceValidator.php';
+		require_once WILAYAH_INDONESIA_PATH . 'src/Cache/CacheManager.php';
 
         $this->loader = new Wilayah_Indonesia_Loader();
         

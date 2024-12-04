@@ -75,26 +75,6 @@
     margin: 0;
 }
 
-/* Toast Notifications */
-.province-toast {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    margin-bottom: 10px;
-}
-
-.province-toast p {
-    margin: 0;
-    line-height: 1.4;
-}
-
-.province-toast button {
-    opacity: 0.7;
-    transition: opacity 0.2s;
-}
-
-.province-toast button:hover {
-    opacity: 1;
-}
-
 /* Form Fields */
 .wi-form input[type="text"] {
     width: 100%;

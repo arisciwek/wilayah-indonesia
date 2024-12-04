@@ -1,5 +1,5 @@
 /**
- * Province Management Scripts
+ * Province Management Interface
  *
  * @package     Wilayah_Indonesia
  * @subpackage  Assets/JS
@@ -8,303 +8,179 @@
  * 
  * Path: /wilayah-indonesia/assets/js/province.js
  * 
- * Description: Mengelola interaksi UI untuk halaman manajemen provinsi.
- *              Mengimplementasikan DataTables untuk daftar provinsi.
- *              Menangani operasi CRUD dengan AJAX.
- *              Mengelola panel kanan untuk detail provinsi.
- *              Includes validasi form dan notifikasi.
- * 
- * 
- * Changelog:
- * 1.0.0 - 2024-12-02 16:11:00
- * - Initial release
- * - Added DataTables integration
- * - Added CRUD operations via AJAX
- * - Added right panel management
- * - Added toast notifications
- * - Added permission-based UI
- * 
+ * Description: Main JavaScript handler untuk halaman provinsi.
+ *              Mengatur interaksi antar komponen seperti DataTable,
+ *              form, panel kanan, dan notifikasi.
+ *              Includes state management dan event handling.
+ *              Terintegrasi dengan WordPress AJAX API.
  * 
  * Dependencies:
- * - jQuery 3.6+
- * - DataTables 1.13+
- * - wilayahToast.js for notifications
- * - WordPress admin-ajax.php
- * - WordPress capability system
+ * - jQuery
+ * - ProvinceDataTable
+ * - ProvinceForm 
+ * - ProvinceToast
+ * - WordPress AJAX
+ * 
+ * Changelog:
+ * 1.0.0 - 2024-12-03
+ * - Added proper jQuery no-conflict handling
+ * - Added panel kanan integration
+ * - Added CRUD event handlers
+ * - Added toast notifications
+ * - Improved error handling
+ * - Added loading states
+ * 
+ * Last modified: 2024-12-03 16:45:00
  */
-
 (function($) {
     'use strict';
-    
-    // Import required components
-    const { table, bindEvents, refresh, destroy } = window.ProvinceDataTable;
-    
+
     const Province = {
-        table: null,
-        rightPanel: null,
-        currentMode: 'view',
-        form: null,
-
         init() {
-            this.dataTable = window.ProvinceDataTable;
-            this.dataTable.init();
-            this.initRightPanel();
+            // Initialize components
+            ProvinceDataTable.init();
+            ProvinceForm.init();
+            ProvinceToast.init();
+            
             this.bindEvents();
-            this.checkUrlHash();
-        
-            this.form = window.ProvinceForm;
-            this.form.init();
-            window.ProvinceToast.init();
-        },
-
-        initRightPanel() {
-            this.rightPanel = $('#wi-province-right-panel');
+            this.checkInitialHash();
         },
 
         bindEvents() {
-            // DataTable action buttons
-            $('#provinces-table').on('click', '.view-province', (e) => this.handleView(e));
-            $('#provinces-table').on('click', '.edit-province', (e) => this.handleEdit(e));
-            $('#provinces-table').on('click', '.delete-province', (e) => this.handleDelete(e));
-
-            // Right panel events
+            // Panel toggle event
             $('.wi-province-close-panel').on('click', () => this.closePanel());
-            $('.nav-tab').on('click', (e) => this.handleTabClick(e));
             
-            // Form submissions
-            $('#edit-province-form').on('submit', (e) => this.handleUpdate(e));
-            $('#add-province-btn').on('click', () => this.showAddForm());
+            // Tab navigation
+            $('.nav-tab').on('click', (e) => {
+                e.preventDefault();
+                this.switchTab($(e.currentTarget).data('tab'));
+            });
             
-            // URL hash change
-            $(window).on('hashchange', () => this.checkUrlHash());
-            
-            // Cancel buttons
-            $('.cancel-edit').on('click', () => this.switchToViewMode());
-            
-            // Modal events
-            $('#create-province-modal .wi-modal-close, #create-province-modal .cancel-create').on('click', () => {
-                $('#create-province-modal').hide();
-            });
-
-            // Delete confirmation modal
-            $('#delete-province-modal').on('click', '.confirm-delete', () => {
-                const id = $('#delete-province-modal .confirm-delete').data('id');
-                this.executeDelete(id);
-            });
-
-            $('#delete-province-modal').on('click', '.cancel-delete, .wi-modal-close', () => {
-                $('#delete-province-modal').hide();
-            });
-
-            // Form validation events
-            $('#province-name').on('input', (e) => this.validateField(e.target));
-            $('#edit-province-name').on('input', (e) => this.validateField(e.target));
+            // Add province button
+            $('#add-province-btn').on('click', () => this.showCreateForm());
         },
 
-        handleView(e) {
-            const id = $(e.currentTarget).data('id');
-            window.location.hash = id;
-        },
-
-        handleEdit(e) {
-            const id = $(e.currentTarget).data('id');
-            window.location.hash = id;
-            this.switchToEditMode();
-        },
-
-        handleDelete(e) {
-            const id = $(e.currentTarget).data('id');
-            this.showDeleteConfirmation(id);
-        },
-
-        handleUpdate(e) {
-            e.preventDefault();
-            this.form.handleUpdate(e).then(() => {
-                if (this.dataTable) {
-                    this.dataTable.refresh();
-                }
-            });
-        },
-
-        showAddForm() {
-            $('#create-province-modal').show();
-        },
-
-        showDeleteConfirmation(id) {
-            const modal = $('#delete-province-modal');
-            modal.find('.confirm-delete').data('id', id);
-            modal.show();
-        },
-
-        executeDelete(id) {
-            const modal = $('#delete-province-modal');
-            const buttons = modal.find('button');
-            const spinner = modal.find('.spinner');
-
-            $.ajax({
-                url: wilayahData.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'delete_province',
-                    id: id,
-                    nonce: wilayahData.nonce
-                },
-                beforeSend: () => {
-                    buttons.prop('disabled', true);
-                    spinner.addClass('is-active');
-                },
-                success: (response) => {
-                    if (response.success) {
-                        window.ProvinceToast.success('Provinsi berhasil dihapus');
-                        if (this.dataTable) {
-                            this.dataTable.refresh();
-                        }
-                        this.closePanel();
-                        modal.hide();
-                    } else {
-                        window.ProvinceToast.error(response.data.message || 'Gagal menghapus provinsi');
-                    }
-                },
-                error: () => {
-                    window.ProvinceToast.error('Terjadi kesalahan saat menghapus data');
-                },
-                complete: () => {
-                    buttons.prop('disabled', false);
-                    spinner.removeClass('is-active');
-                }
-            });
-        },
-
-        validateField(field) {
-            const $field = $(field);
-            const value = $field.val().trim();
-            const errors = [];
-
-            if (!value) {
-                errors.push('Nama provinsi wajib diisi');
-            } else {
-                if (value.length < 3) {
-                    errors.push('Nama provinsi minimal 3 karakter');
-                }
-                if (value.length > 100) {
-                    errors.push('Nama provinsi maksimal 100 karakter');
-                }
-                if (!/^[a-zA-Z\s]+$/.test(value)) {
-                    errors.push('Nama provinsi hanya boleh mengandung huruf dan spasi');
-                }
-            }
-
-            const $error = $field.next('.form-error');
-            if (errors.length > 0) {
-                $field.addClass('error');
-                if ($error.length) {
-                    $error.text(errors[0]);
-                } else {
-                    $('<span class="form-error"></span>')
-                        .text(errors[0])
-                        .insertAfter($field);
-                }
-                return false;
-            } else {
-                $field.removeClass('error');
-                $error.remove();
-                return true;
-            }
-        },
-
-        // Handle direct URL access
-        checkUrlHash() {
+        checkInitialHash() {
             const hash = window.location.hash;
             if (hash && hash.startsWith('#')) {
-                const id = parseInt(hash.substring(1));
-                if (id) {
-                    this.loadProvinceData(id);
-                }
+                ProvinceDataTable.handleHashChange();
             }
         },
 
-        loadProvinceData(id) {
-            $.ajax({
-                url: wilayahData.ajaxUrl,
-                type: 'POST',
-                data: {
-                    action: 'get_province',
-                    id: id,
-                    nonce: wilayahData.nonce
-                },
-                beforeSend: () => {
-                    this.rightPanel.addClass('loading');
-                },
-                success: (response) => {
-                    if (response.success) {
-                        this.populateData(response.data);
-                        this.openPanel();
-                    } else {
-                        window.ProvinceToast.error(response.data.message || 'Gagal memuat data provinsi');
-                    }
-                },
-                error: () => {
-                    window.ProvinceToast.error('Terjadi kesalahan saat memuat data');
-                },
-                complete: () => {
-                    this.rightPanel.removeClass('loading');
-                }
-            });
+        switchTab(tabId) {
+            $('.nav-tab').removeClass('nav-tab-active');
+            $(`.nav-tab[data-tab="${tabId}"]`).addClass('nav-tab-active');
+            
+            $('.tab-content').removeClass('active');
+            $(`#${tabId}`).addClass('active');
         },
 
-        populateData(data) {
-            // Data provinsi dari controller
-            $('#province-name').text(data.province.name);
-            $('#regency-count').text(data.province.regency_count);
-            $('#created-by').text(data.province.created_by);
-            $('#created-at').text(data.province.created_at);
-            $('#updated-at').text(data.province.updated_at);
-
-            // Juga update form edit
-            $('#edit-province-name').val(data.province.name);
-            $('#province-id').val(data.province.id);
-
-            this.openPanel();
+        showCreateForm() {
+            // Reset any existing form
+            ProvinceForm.resetForm($('#create-province-form'));
+            
+            // Show modal with animation
+            $('#create-province-modal').fadeIn(300);
         },
 
-        openPanel() {
+        displayData(data, editMode = false) {
+            // Update container classes
             $('.wi-province-container').addClass('with-right-panel');
-            $('#wi-province-right-panel').addClass('visible');
+            $('.wi-province-right-panel').addClass('visible');
+
+            // Populate data
+            $('#province-details').html(`
+                <h3>${data.province.name}</h3>
+                <div class="meta-info">
+                    <p>Jumlah Kabupaten/Kota: ${data.regency_count}</p>
+                    <p>Dibuat: ${data.province.created_at}</p>
+                    <p>Terakhir diupdate: ${data.province.updated_at}</p>
+                </div>
+            `);
+
+            if (editMode) {
+                this.switchToEditMode(data);
+            }
+        },
+
+        switchToEditMode(data = null) {
+            const $form = $('#edit-province-form');
+            if (data) {
+                $form.find('#province-id').val(data.province.id);
+                $form.find('[name="name"]').val(data.province.name);
+            }
+            
+            $('#view-mode').hide();
+            $('#edit-mode').show();
+        },
+
+        switchToViewMode() {
+            $('#edit-mode').hide();
+            $('#view-mode').show();
         },
 
         closePanel() {
             $('.wi-province-container').removeClass('with-right-panel');
-            $('#wi-province-right-panel').removeClass('visible');
+            $('.wi-province-right-panel').removeClass('visible');
             window.location.hash = '';
+            $(document).trigger('panel:closed');
         },
 
-        switchToViewMode() {
-            $('#view-mode').show();
-            $('#edit-mode').hide();
-            this.currentMode = 'view';
+        showDeleteConfirmation(id) {
+            if (confirm('Yakin ingin menghapus provinsi ini?')) {
+                this.handleDelete(id);
+            }
         },
 
-        switchToEditMode() {
-            $('#view-mode').hide();
-            $('#edit-mode').show();
-            this.currentMode = 'edit';
+        async handleDelete(id) {
+            try {
+                const response = await $.ajax({
+                    url: wilayahData.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'delete_province',
+                        id: id,
+                        nonce: wilayahData.nonce
+                    }
+                });
+
+                if (response.success) {
+                    ProvinceToast.deleted();
+                    this.closePanel();
+                    $(document).trigger('province:deleted');
+                } else {
+                    ProvinceToast.error(response.data?.message || 'Gagal menghapus provinsi');
+                }
+            } catch (error) {
+                console.error('Delete province error:', error);
+                ProvinceToast.ajaxError();
+            }
         },
 
-        handleTabClick(e) {
-            e.preventDefault();
-            const $tab = $(e.currentTarget);
-            const tabId = $tab.data('tab');
-            
-            $('.nav-tab').removeClass('nav-tab-active');
-            $tab.addClass('nav-tab-active');
-            
-            $('.tab-content').removeClass('active');
-            $(`#${tabId}`).addClass('active');
+        showLoading() {
+            $('.wi-province-panel-content').addClass('loading');
+        },
+
+        hideLoading() {
+            $('.wi-province-panel-content').removeClass('loading');
         }
     };
 
+    // Initialize when document is ready
     $(document).ready(() => {
+        window.Province = Province;
         Province.init();
     });
+    /*
+    $(document).ready(() => {
+        window.Province = Province;
+        Province.init();
+        // Inisialisasi ProvinceDataTable setelah Province
+        if (window.ProvinceDataTable) {
+            ProvinceDataTable.init(); 
+        }
+    });
+
+    */
 
 })(jQuery);

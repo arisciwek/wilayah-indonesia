@@ -41,16 +41,9 @@ defined('ABSPATH') || exit;
 
         <div class="wi-modal-body">
             <form id="create-province-form" method="post">
-                <?php 
-                // Security check
-                wp_nonce_field('wilayah_nonce'); 
+                <?php wp_nonce_field('wilayah_nonce'); ?>
+                <input type="hidden" name="action" value="create_province">
                 
-                // Permission check
-                if (!current_user_can('add_province')) {
-                    wp_die(__('Anda tidak memiliki izin untuk menambah provinsi.', 'wilayah-indonesia'));
-                }
-                ?>
-
                 <div class="wi-form-group">
                     <label for="province-name" class="required-field">
                         <?php _e('Nama Provinsi', 'wilayah-indonesia'); ?>
@@ -61,21 +54,16 @@ defined('ABSPATH') || exit;
                            class="regular-text" 
                            maxlength="100" 
                            required>
-                    <p class="field-description">
-                        <?php _e('Masukkan nama provinsi (maksimal 100 karakter)', 'wilayah-indonesia'); ?>
-                    </p>
                 </div>
-
-                <div class="wi-modal-footer">
-                    <div class="submit-wrapper">
-                        <button type="submit" class="button button-primary">
-                            <?php _e('Simpan', 'wilayah-indonesia'); ?>
-                        </button>
-                        <button type="button" class="button cancel-create">
-                            <?php _e('Batal', 'wilayah-indonesia'); ?>
-                        </button>
-                        <span class="spinner"></span>
-                    </div>
+                
+                <div class="submit-wrapper">
+                    <button type="submit" class="button button-primary">
+                        <?php _e('Simpan', 'wilayah-indonesia'); ?>
+                    </button>
+                    <button type="button" class="button cancel-create">
+                        <?php _e('Batal', 'wilayah-indonesia'); ?>
+                    </button>
+                    <span class="spinner"></span>
                 </div>
             </form>
         </div>
