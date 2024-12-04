@@ -2,7 +2,7 @@
  * File: permissions-script.js
  * Path: /wilayah-indonesia/assets/js/settings/permissions-script.js
  * Description: Handler untuk matrix permission
- * Version: 2.0.0
+ * Version: 1.0.0
  * Last modified: 2024-12-02
  * 
  * Dependencies:
