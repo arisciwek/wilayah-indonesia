@@ -64,7 +64,7 @@ class Wilayah_Indonesia_Dependencies {
            return;
        }
 
-        // Province page scripts  
+       // Province page scripts  
         if ($screen->id === 'toplevel_page_wilayah-indonesia') {
             // Core dependencies
             wp_enqueue_script('jquery-validate', 'https://cdn.jsdelivr.net/npm/jquery-validation@1.19.5/dist/jquery.validate.min.js', ['jquery'], '1.19.5', true);
@@ -73,25 +73,27 @@ class Wilayah_Indonesia_Dependencies {
             // Components
             wp_enqueue_script('province-toast', WILAYAH_INDONESIA_URL . 'assets/js/components/province-toast.js', ['jquery'], $this->version, true);
             wp_enqueue_script('province-datatable', WILAYAH_INDONESIA_URL . 'assets/js/components/province-datatable.js', ['jquery', 'datatables', 'province-toast'], $this->version, true);
-            /*
-            wp_enqueue_script('province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
-            */
-
-
-            wp_enqueue_script('province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/create-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
-            wp_enqueue_script('province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/edit-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
-
-
-
             
-            // Main province script - load last
-            wp_enqueue_script('province', WILAYAH_INDONESIA_URL . 'assets/js/province.js', ['jquery', 'province-toast', 'province-datatable', 'province-form'], $this->version, true);
+            // Form handlers - dengan handle yang berbeda
+            wp_enqueue_script('create-province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/create-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
+            wp_enqueue_script('edit-province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/edit-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
+            
+            // Main province script - update dependencies
+            wp_enqueue_script('province', WILAYAH_INDONESIA_URL . 'assets/js/province.js', [
+                'jquery', 
+                'province-toast', 
+                'province-datatable',
+                'create-province-form',
+                'edit-province-form'
+            ], $this->version, true);
 
-            // Localize setelah semua script di-load
+            // Localize script
             wp_localize_script('province', 'wilayahData', [
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('wilayah_nonce')
             ]);
         }
+
+
     }
 }

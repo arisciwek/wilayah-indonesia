@@ -33,6 +33,7 @@
  * 
  * Last modified: 2024-12-03 17:30:00
  */
+
 (function($) {
     'use strict';
 
@@ -51,10 +52,6 @@
             "last": "Terakhir",
             "next": "Selanjutnya",
             "previous": "Sebelumnya"
-        },
-        "aria": {
-            "sortAscending": ": aktifkan untuk mengurutkan kolom secara ascending",
-            "sortDescending": ": aktifkan untuk mengurutkan kolom secara descending"
         }
     };
     
@@ -63,34 +60,16 @@
         initialized: false,
 
         init() {
-            if (!window.Province) {
-                setTimeout(() => this.init(), 100);
-                return;
-            }
-
-            this.initialized = true;
+            // Initialize DataTable
             this.initDataTable();
             this.bindEvents();
-            this.handleHashChange();
+            this.checkInitialHash();
         },
 
         initDataTable() {
-            // Destroy existing instance if exists
             if ($.fn.DataTable.isDataTable('#provinces-table')) {
                 $('#provinces-table').DataTable().destroy();
             }
-
-            // Clear existing table content
-            $('#provinces-table').empty().html(`
-                <thead>
-                    <tr>
-                        <th>Nama Provinsi</th>
-                        <th>Jumlah Kab/Kota</th>
-                        <th>Aksi</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            `);
 
             this.table = $('#provinces-table').DataTable({
                 processing: true,
@@ -106,8 +85,8 @@
                         };
                     },
                     error: (xhr, error, thrown) => {
-                        ProvinceToast.error('Gagal memuat data provinsi');
                         console.error('DataTables Error:', error);
+                        ProvinceToast.error('Gagal memuat data provinsi');
                     }
                 },
                 columns: [
@@ -131,7 +110,6 @@
                 ],
                 order: [[0, 'asc']],
                 pageLength: wilayahData.perPage || 10,
-                dom: '<"top"lf>rt<"bottom"ip><"clear">',
                 language: indonesianLanguage,
                 drawCallback: () => {
                     this.bindActionButtons();
@@ -141,21 +119,13 @@
         },
 
         bindEvents() {
-            // Unbind existing events
-            $(window).off('hashchange.province');
-            $(document).off('panel:closed.province province:created.province province:updated.province province:deleted.province');
-            $('#provinces-table').off('click', '.view-province, .edit-province, .delete-province');
-            
-            // Hash change event
             $(window).on('hashchange.province', () => this.handleHashChange());
             
-            // Panel state changes
             $(document).on('panel:closed.province', () => {
                 window.location.hash = '';
                 this.refresh();
             });
 
-            // CRUD event handlers
             $(document).on('province:created.province province:updated.province', (e, data) => {
                 this.refresh();
                 this.loadProvincePanel(data.id, data);
@@ -186,7 +156,6 @@
                 
                 if (!window.EditProvinceForm) {
                     console.error('EditProvinceForm not found');
-                    ProvinceToast.error('Sistem error: Form editor tidak tersedia');
                     return;
                 }
                 
@@ -209,7 +178,7 @@
                 });
             });
             
-            // Delete button
+            // Delete button 
             $table.on('click', '.delete-province', (e) => {
                 const id = $(e.currentTarget).data('id');
                 if (window.Province) {
@@ -218,13 +187,13 @@
             });
         },
 
-        loadProvincePanel(id, data = null, editMode = false) {
+        loadProvincePanel(id, data = null) {
             if (!id) return;
 
             window.location.hash = id;
 
             if (data) {
-                Province.displayData(data, editMode);
+                Province.displayData(data);
                 return;
             }
 
@@ -239,7 +208,7 @@
                 beforeSend: () => Province.showLoading(),
                 success: (response) => {
                     if (response.success) {
-                        Province.displayData(response.data, editMode);
+                        Province.displayData(response.data);
                     } else {
                         ProvinceToast.error(response.data?.message || 'Gagal memuat data provinsi');
                     }
@@ -256,6 +225,13 @@
                 if (id) {
                     this.loadProvincePanel(id);
                 }
+            }
+        },
+
+        checkInitialHash() {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#')) {
+                this.handleHashChange();
             }
         },
 

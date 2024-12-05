@@ -37,37 +37,22 @@ defined('ABSPATH') || exit;
             <button type="button" class="modal-close" aria-label="Close">&times;</button>
         </div>
         <div class="modal-content">
-            <form id="edit-province-form" method="post">
-                <?php wp_nonce_field('wilayah_nonce'); ?>
-                <input type="hidden" id="province-id" name="id" value="">
+            <div id="edit-mode" style="display: none;">
 
-                <div class="wi-form-group">
-                    <label for="province-name-edit" class="required-field">
-                        <?php _e('Nama Provinsi', 'wilayah-indonesia'); ?>
-                    </label>
-                    <input type="text" 
-                           id="province-name-edit" 
-                           name="name" 
-                           class="regular-text" 
-                           maxlength="100" 
-                           required>
-                    <p class="field-description">
-                        <?php _e('Masukkan nama provinsi (maksimal 100 karakter)', 'wilayah-indonesia'); ?>
-                    </p>
-                </div>
-
-                <div class="wi-modal-footer">
+                <form id="edit-province-form" class="wi-form">
+                    <input type="hidden" id="province-id" name="id" value="">
+                    <div class="wi-form-group">
+                        <label for="edit-name" class="required-field">Nama Provinsi</label>
+                        <input type="text" id="edit-name" name="name" value="">
+                    </div>
                     <div class="submit-wrapper">
-                        <button type="submit" class="button button-primary">
-                            <?php _e('Simpan', 'wilayah-indonesia'); ?>
-                        </button>
-                        <button type="button" class="button cancel-edit">
-                            <?php _e('Batal', 'wilayah-indonesia'); ?>
-                        </button>
+                        <button type="submit" class="button button-primary">Update</button>
+                        <button type="button" class="button cancel-edit">Batal</button>
                         <span class="spinner"></span>
                     </div>
-                </div>
-            </form>
+                </form>
+
+            </div>
         </div>
     </div>
 </div>

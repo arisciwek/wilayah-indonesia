@@ -55,6 +55,15 @@ class ProvinceController {
         // Register AJAX handlers
         add_action('wp_ajax_handle_province_datatable', [$this, 'handleDataTableRequest']);
         add_action('wp_ajax_nopriv_handle_province_datatable', [$this, 'handleDataTableRequest']);
+
+        // Register endpoint untuk update
+        add_action('wp_ajax_update_province', [$this, 'update']);
+        
+        // Register endpoint lain yang diperlukan
+        add_action('wp_ajax_get_province', [$this, 'show']); 
+        add_action('wp_ajax_create_province', [$this, 'store']);
+        add_action('wp_ajax_delete_province', [$this, 'delete']);
+
     }
 
     /**
@@ -264,7 +273,7 @@ class ProvinceController {
             'message' => 'Province created successfully'
         ]);
     }
-
+/*
     public function update($id) {
         check_ajax_referer('wilayah_nonce', 'nonce');
         
@@ -306,7 +315,51 @@ class ProvinceController {
             'message' => 'Province updated successfully'
         ]);
     }
+*/
+    public function update() {
+        try {
+            check_ajax_referer('wilayah_nonce', 'nonce');
+            
+            $id = isset($_POST['id']) ? intval($_POST['id']) : 0;
+            if (!$id) {
+                throw new \Exception('Invalid province ID');
+            }
 
+            // Validasi input
+            $data = [
+                'name' => sanitize_text_field($_POST['name'])
+            ];
+            
+            $errors = $this->validator->validateUpdate($data, $id);
+            if (!empty($errors)) {
+                wp_send_json_error(['message' => implode(', ', $errors)]);
+                return;
+            }
+
+            // Update data
+            $updated = $this->model->update($id, $data);
+            if (!$updated) {
+                throw new \Exception('Failed to update province');
+            }
+
+            // Get updated data
+            $province = $this->model->find($id);
+            if (!$province) {
+                throw new \Exception('Failed to retrieve updated province');
+            }
+
+            wp_send_json_success([
+                'message' => 'Province updated successfully',
+                'data' => [
+                    'province' => $province,
+                    'regency_count' => $this->model->getRegencyCount($id)
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
+        }
+    }
     public function show($id) {
         try {
             check_ajax_referer('wilayah_nonce', 'nonce');
