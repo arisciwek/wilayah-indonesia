@@ -5,22 +5,22 @@
  * @subpackage  Assets/JS
  * @version     1.0.0
  * @author      arisciwek
- * 
+ *
  * Path: /wilayah-indonesia/assets/js/province.js
- * 
+ *
  * Description: Main JavaScript handler untuk halaman provinsi.
  *              Mengatur interaksi antar komponen seperti DataTable,
  *              form, panel kanan, dan notifikasi.
  *              Includes state management dan event handling.
  *              Terintegrasi dengan WordPress AJAX API.
- * 
+ *
  * Dependencies:
  * - jQuery
  * - ProvinceDataTable
- * - ProvinceForm 
+ * - ProvinceForm
  * - ProvinceToast
  * - WordPress AJAX
- * 
+ *
  * Changelog:
  * 1.0.0 - 2024-12-03
  * - Added proper jQuery no-conflict handling
@@ -29,7 +29,7 @@
  * - Added toast notifications
  * - Improved error handling
  * - Added loading states
- * 
+ *
  * Last modified: 2024-12-03 16:45:00
  */
 /**
@@ -39,22 +39,22 @@
  * @subpackage  Assets/JS
  * @version     1.0.0
  * @author      arisciwek
- * 
+ *
  * Path: /wilayah-indonesia/assets/js/province.js
- * 
+ *
  * Description: Main JavaScript handler untuk halaman provinsi.
  *              Mengatur interaksi antar komponen seperti DataTable,
  *              form, panel kanan, dan notifikasi.
  *              Includes state management dan event handling.
  *              Terintegrasi dengan WordPress AJAX API.
- * 
+ *
  * Dependencies:
  * - jQuery
  * - ProvinceDataTable
- * - ProvinceForm 
+ * - ProvinceForm
  * - ProvinceToast
  * - WordPress AJAX
- * 
+ *
  * Changelog:
  * 1.0.0 - 2024-12-03
  * - Added proper jQuery no-conflict handling
@@ -63,7 +63,7 @@
  * - Added toast notifications
  * - Improved error handling
  * - Added loading states
- * 
+ *
  * Last modified: 2024-12-03 16:45:00
  */
 (function($) {
@@ -84,7 +84,7 @@
                 CreateProvinceForm.init();
                 EditProvinceForm.init();
                 ProvinceDataTable.init();
-                
+
                 this.bindEvents();
                 this.checkInitialHash();
             } catch (error) {
@@ -95,13 +95,13 @@
         bindEvents() {
             // Panel toggle event
             $('.wi-province-close-panel').off('click').on('click', () => this.closePanel());
-            
+
             // Tab navigation
             $('.nav-tab').off('click').on('click', (e) => {
                 e.preventDefault();
                 this.switchTab($(e.currentTarget).data('tab'));
             });
-            
+
             // Add province button
             $('#add-province-btn').off('click').on('click', () => CreateProvinceForm.showForm());
         },
@@ -116,7 +116,7 @@
         switchTab(tabId) {
             $('.nav-tab').removeClass('nav-tab-active');
             $(`.nav-tab[data-tab="${tabId}"]`).addClass('nav-tab-active');
-            
+
             $('.tab-content').removeClass('active');
             $(`#${tabId}`).addClass('active');
         },
@@ -152,7 +152,7 @@
                 $form.find('#province-id').val(data.province.id);
                 $form.find('[name="name"]').val(data.province.name);
             }
-            
+
             $('#view-mode').hide();
             $('#edit-mode').show();
         },
@@ -169,13 +169,12 @@
             $(document).trigger('panel:closed');
         },
 
-        showDeleteConfirmation(id) {
-            if (confirm('Yakin ingin menghapus provinsi ini?')) {
-                this.handleDelete(id);
-            }
-        },
-
         async handleDelete(id) {
+            // Konfirmasi hanya sekali di sini
+            if (!confirm('Yakin ingin menghapus provinsi ini?')) {
+                return;
+            }
+
             try {
                 const response = await $.ajax({
                     url: wilayahData.ajaxUrl,
@@ -188,15 +187,21 @@
                 });
 
                 if (response.success) {
-                    ProvinceToast.deleted();
+                    // Clear hash dan tutup panel sebelum refresh
+                    window.location.hash = '';
                     this.closePanel();
+
+                    // Tampilkan pesan sukses
+                    ProvinceToast.success('Provinsi berhasil dihapus');
+
+                    // Trigger refresh data
                     $(document).trigger('province:deleted');
                 } else {
                     ProvinceToast.error(response.data?.message || 'Gagal menghapus provinsi');
                 }
             } catch (error) {
                 console.error('Delete province error:', error);
-                ProvinceToast.ajaxError();
+                ProvinceToast.error('Gagal menghubungi server');
             }
         },
 

@@ -5,21 +5,21 @@
  * @subpackage  Assets/JS/Components
  * @version     1.0.0
  * @author      arisciwek
- * 
+ *
  * Path: /wilayah-indonesia/assets/js/components/province-form.js
- * 
+ *
  * Description: Handler untuk form provinsi.
  *              Menangani create dan update provinsi.
  *              Includes validasi form, error handling,
  *              dan integrasi dengan komponen lain.
- * 
+ *
  * Dependencies:
  * - jQuery
  * - jQuery Validation
  * - ProvinceToast for notifications
  * - Province main component
  * - WordPress AJAX API
- * 
+ *
  * Changelog:
  * 1.0.0 - 2024-12-03
  * - Added proper form validation
@@ -29,7 +29,7 @@
  * - Added error handling
  * - Added toast notifications
  * - Added panel integration
- * 
+ *
  * Last modified: 2024-12-03 16:30:00
  */
 /**
@@ -44,12 +44,12 @@
     const EditProvinceForm = {
         modal: null,
         form: null,
-        
+
         init() {
             // Initialize modal and form elements
             this.modal = $('#edit-province-modal');
             this.form = $('#edit-province-form');
-            
+
             this.bindEvents();
             this.initializeValidation();
         },
@@ -60,11 +60,11 @@
             this.form.on('input', 'input[name="name"]', (e) => {
                 this.validateField(e.target);
             });
-            
+
             // Modal events
             $('.modal-close', this.modal).on('click', () => this.hideModal());
             $('.cancel-edit', this.modal).on('click', () => this.hideModal());
-            
+
             // Close modal when clicking outside
             this.modal.on('click', (e) => {
                 if ($(e.target).is('.modal-overlay')) {
@@ -76,14 +76,14 @@
         showEditForm(data) {
             // Reset form first
             this.resetForm();
-            
+
             // Populate form data
             this.form.find('#province-id').val(data.province.id);
             this.form.find('[name="name"]').val(data.province.name);
-            
+
             // Update modal title
             this.modal.find('.modal-header h3').text('Edit Provinsi');
-            
+
             // Show modal with animation
             this.modal.fadeIn(300);
             $('#edit-mode').show();
@@ -163,7 +163,7 @@
         async handleUpdate(e) {
             e.preventDefault();
             const $form = $(e.currentTarget);
-            
+
             if (!$form.valid()) {
                 return;
             }
@@ -175,7 +175,7 @@
                 id: id,
                 name: $form.find('[name="name"]').val()
             };
-            
+
             this.setLoadingState(true);
 
             try {
@@ -188,6 +188,9 @@
                 if (response.success) {
                     ProvinceToast.success('Provinsi berhasil diperbarui');
                     this.hideModal();
+                    // Update URL hash to edited province's ID
+                    window.location.hash = id;
+                    
                     $(document).trigger('province:updated', [response.data]);
                 } else {
                     ProvinceToast.error(response.data?.message || 'Gagal memperbarui provinsi');
@@ -203,7 +206,7 @@
         setLoadingState(loading) {
             const $submitBtn = this.form.find('[type="submit"]');
             const $spinner = this.form.find('.spinner');
-            
+
             if (loading) {
                 $submitBtn.prop('disabled', true);
                 $spinner.addClass('is-active');
