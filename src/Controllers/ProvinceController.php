@@ -443,34 +443,36 @@ class ProvinceController {
         }
     }
 
-        public function delete() {
-            try {
-                check_ajax_referer('wilayah_nonce', 'nonce');
 
-                // Ensure we have an ID and it's properly cast to integer
-                $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
-                if (!$id) {
-                    throw new \Exception('Invalid province ID');
-                }
+    public function delete() {
+        try {
+            check_ajax_referer('wilayah_nonce', 'nonce');
 
-                // Validate delete operation
-                $errors = $this->validator->validateDelete($id);
-                if (!empty($errors)) {
-                    throw new \Exception(reset($errors));
-                }
-
-                // Perform delete
-                if (!$this->model->delete($id)) {
-                    throw new \Exception('Failed to delete province');
-                }
-
-                // Clear cache
-                $this->cache->invalidateProvinceCache($id);
-
-                wp_send_json_success(['message' => 'Province deleted successfully']);
-
-            } catch (\Exception $e) {
-                wp_send_json_error(['message' => $e->getMessage()]);
+            // Ensure we have an ID and it's properly cast to integer
+            $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+            if (!$id) {
+                throw new \Exception('Invalid province ID');
             }
+
+            // Validate delete operation
+            $errors = $this->validator->validateDelete($id);
+            if (!empty($errors)) {
+                throw new \Exception(reset($errors));
+            }
+
+            // Perform delete
+            if (!$this->model->delete($id)) {
+                throw new \Exception('Failed to delete province');
+            }
+
+            // Clear cache
+            $this->cache->invalidateProvinceCache($id);
+
+            wp_send_json_success(['message' => 'Province deleted successfully']);
+
+        } catch (\Exception $e) {
+            wp_send_json_error(['message' => $e->getMessage()]);
         }
+    }
+    
 }

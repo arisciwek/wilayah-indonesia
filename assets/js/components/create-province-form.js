@@ -5,21 +5,21 @@
  * @subpackage  Assets/JS/Components
  * @version     1.0.0
  * @author      arisciwek
- * 
- * Path: /wilayah-indonesia/assets/js/components/province-form.js
- * 
+ *
+ * Path: /wilayah-indonesia/assets/js/components/create-province-form.js
+ *
  * Description: Handler untuk form provinsi.
  *              Menangani create dan update provinsi.
  *              Includes validasi form, error handling,
  *              dan integrasi dengan komponen lain.
- * 
+ *
  * Dependencies:
  * - jQuery
  * - jQuery Validation
  * - ProvinceToast for notifications
  * - Province main component
  * - WordPress AJAX API
- * 
+ *
  * Changelog:
  * 1.0.0 - 2024-12-03
  * - Added proper form validation
@@ -29,7 +29,7 @@
  * - Added error handling
  * - Added toast notifications
  * - Added panel integration
- * 
+ *
  * Last modified: 2024-12-03 16:30:00
  */
 (function($) {
@@ -38,12 +38,12 @@
     const CreateProvinceForm = {
         modal: null,
         form: null,
-        
+
         init() {
             // Initialize modal and form elements
             this.modal = $('#create-province-modal');
             this.form = $('#create-province-form');
-            
+
             this.bindEvents();
             this.initializeValidation();
         },
@@ -54,25 +54,29 @@
             this.form.on('input', 'input[name="name"]', (e) => {
                 this.validateField(e.target);
             });
-            
+
             // Modal events
             $('.modal-close', this.modal).on('click', () => this.hideModal());
             $('.cancel-create', this.modal).on('click', () => this.hideModal());
-            
+
             // Close modal when clicking outside
             this.modal.on('click', (e) => {
                 if ($(e.target).is('.modal-overlay')) {
                     this.hideModal();
                 }
             });
+
+            // Add button handler
+            $('#add-province-btn').on('click', () => this.showModal());
         },
 
-        showForm() {
+        showModal() {
             // Reset form first
             this.resetForm();
-            
+
             // Show modal with animation
             this.modal.fadeIn(300);
+            this.form.find('[name="name"]').focus();
         },
 
         hideModal() {
@@ -125,6 +129,9 @@
                 if (value.length > 100) {
                     errors.push('Nama provinsi maksimal 100 karakter');
                 }
+                if (!/^[a-zA-Z\s]+$/.test(value)) {
+                    errors.push('Nama provinsi hanya boleh mengandung huruf dan spasi');
+                }
             }
 
             const $error = $field.next('.form-error');
@@ -147,18 +154,17 @@
 
         async handleCreate(e) {
             e.preventDefault();
-            const $form = $(e.currentTarget);
-            
-            if (!$form.valid()) {
+
+            if (!this.form.valid()) {
                 return;
             }
 
             const requestData = {
                 action: 'create_province',
                 nonce: wilayahData.nonce,
-                name: $form.find('[name="name"]').val()
+                name: this.form.find('[name="name"]').val().trim()
             };
-            
+
             this.setLoadingState(true);
 
             try {
@@ -171,17 +177,18 @@
                 if (response.success) {
                     ProvinceToast.success('Provinsi berhasil ditambahkan');
                     this.hideModal();
-                    
-                    // Transform data to match edit format
-                    const transformedData = {
-                        province: response.data.data,
-                        regency_count: response.data.regency_count || 0
-                    };
-                    
-                    $(document).trigger('province:created', [transformedData]);
-                    
+
+                    // Update URL hash to new province's ID
                     if (response.data.id) {
                         window.location.hash = response.data.id;
+                    }
+
+                    // Trigger events for other components
+                    $(document).trigger('province:created', [response.data]);
+
+                    // Refresh DataTable if exists
+                    if (window.ProvinceDataTable) {
+                        window.ProvinceDataTable.refresh();
                     }
                 } else {
                     ProvinceToast.error(response.data?.message || 'Gagal menambah provinsi');
@@ -197,7 +204,7 @@
         setLoadingState(loading) {
             const $submitBtn = this.form.find('[type="submit"]');
             const $spinner = this.form.find('.spinner');
-            
+
             if (loading) {
                 $submitBtn.prop('disabled', true);
                 $spinner.addClass('is-active');
@@ -213,6 +220,7 @@
             this.form[0].reset();
             this.form.find('.form-error').remove();
             this.form.find('.error').removeClass('error');
+            this.form.validate().resetForm();
         }
     };
 

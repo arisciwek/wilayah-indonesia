@@ -6,7 +6,7 @@
  * @version     1.0.0
  * @author      arisciwek
  *
- * Path: /wilayah-indonesia/assets/js/components/province-form.js
+ * Path: /wilayah-indonesia/assets/js/components/edit-province-form.js
  *
  * Description: Handler untuk form provinsi.
  *              Menangani create dan update provinsi.
@@ -32,12 +32,7 @@
  *
  * Last modified: 2024-12-03 16:30:00
  */
-/**
- * Edit Province Form Handler
- */
-/**
- * Edit Province Form Handler
- */
+
 (function($) {
     'use strict';
 
@@ -46,7 +41,6 @@
         form: null,
 
         init() {
-            // Initialize modal and form elements
             this.modal = $('#edit-province-modal');
             this.form = $('#edit-province-form');
 
@@ -74,6 +68,11 @@
         },
 
         showEditForm(data) {
+            if (!data || !data.province) {
+                ProvinceToast.error('Data provinsi tidak valid');
+                return;
+            }
+
             // Reset form first
             this.resetForm();
 
@@ -81,11 +80,13 @@
             this.form.find('#province-id').val(data.province.id);
             this.form.find('[name="name"]').val(data.province.name);
 
-            // Update modal title
-            this.modal.find('.modal-header h3').text('Edit Provinsi');
+            // Update modal title with province name
+            this.modal.find('.modal-header h3').text(`Edit Provinsi: ${data.province.name}`);
 
             // Show modal with animation
-            this.modal.fadeIn(300);
+            this.modal.fadeIn(300, () => {
+                this.form.find('[name="name"]').focus();
+            });
             $('#edit-mode').show();
         },
 
@@ -140,6 +141,9 @@
                 if (value.length > 100) {
                     errors.push('Nama provinsi maksimal 100 karakter');
                 }
+                if (!/^[a-zA-Z\s]+$/.test(value)) {
+                    errors.push('Nama provinsi hanya boleh mengandung huruf dan spasi');
+                }
             }
 
             const $error = $field.next('.form-error');
@@ -159,21 +163,20 @@
                 return true;
             }
         },
-
+        
         async handleUpdate(e) {
             e.preventDefault();
-            const $form = $(e.currentTarget);
 
-            if (!$form.valid()) {
+            if (!this.form.valid()) {
                 return;
             }
 
-            const id = $form.find('#province-id').val();
+            const id = this.form.find('#province-id').val();
             const requestData = {
                 action: 'update_province',
                 nonce: wilayahData.nonce,
                 id: id,
-                name: $form.find('[name="name"]').val()
+                name: this.form.find('[name="name"]').val().trim()
             };
 
             this.setLoadingState(true);
@@ -188,10 +191,19 @@
                 if (response.success) {
                     ProvinceToast.success('Provinsi berhasil diperbarui');
                     this.hideModal();
+
                     // Update URL hash to edited province's ID
-                    window.location.hash = id;
-                    
-                    $(document).trigger('province:updated', [response.data]);
+                    if (id) {
+                        window.location.hash = id;
+                    }
+
+                    // Trigger events for other components
+                    $(document).trigger('province:updated', [response]);
+
+                    // Refresh DataTable if exists
+                    if (window.ProvinceDataTable) {
+                        window.ProvinceDataTable.refresh();
+                    }
                 } else {
                     ProvinceToast.error(response.data?.message || 'Gagal memperbarui provinsi');
                 }
@@ -222,14 +234,13 @@
             this.form[0].reset();
             this.form.find('.form-error').remove();
             this.form.find('.error').removeClass('error');
+            this.form.validate().resetForm();
         }
     };
 
-    // Expose to global scope
-    window.EditProvinceForm = EditProvinceForm;
-
     // Initialize when document is ready
     $(document).ready(() => {
+        window.EditProvinceForm = EditProvinceForm;
         EditProvinceForm.init();
     });
 
