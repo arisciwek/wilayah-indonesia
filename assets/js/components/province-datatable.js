@@ -221,41 +221,49 @@
                  ProvinceToast.error('Gagal menghubungi server');
              }
          },
-
          async handleDelete(id) {
-             // Konfirmasi hanya sekali di sini
-             if (!id || !confirm('Yakin ingin menghapus provinsi ini?')) {
-                 return;
-             }
+             if (!id) return;
 
-             try {
-                 const response = await $.ajax({
-                     url: wilayahData.ajaxUrl,
-                     type: 'POST',
-                     data: {
-                         action: 'delete_province',
-                         id: id,
-                         nonce: wilayahData.nonce
+             // Tampilkan modal konfirmasi dengan WIModal
+             WIModal.show({
+                 title: 'Konfirmasi Hapus',
+                 message: 'Yakin ingin menghapus provinsi ini? Aksi ini tidak dapat dibatalkan.',
+                 icon: 'trash',
+                 type: 'danger',
+                 confirmText: 'Hapus',
+                 confirmClass: 'button-danger',
+                 cancelText: 'Batal',
+                 onConfirm: async () => {
+                     try {
+                         const response = await $.ajax({
+                             url: wilayahData.ajaxUrl,
+                             type: 'POST',
+                             data: {
+                                 action: 'delete_province',
+                                 id: id,
+                                 nonce: wilayahData.nonce
+                             }
+                         });
+
+                         if (response.success) {
+                             ProvinceToast.success('Provinsi berhasil dihapus');
+
+                             // Clear hash if deleted province is currently viewed
+                             if (window.location.hash === `#${id}`) {
+                                 window.location.hash = '';
+                             }
+
+                             this.refresh();
+                             $(document).trigger('province:deleted');
+                         } else {
+                             ProvinceToast.error(response.data?.message || 'Gagal menghapus provinsi');
+                         }
+                     } catch (error) {
+                         console.error('Delete province error:', error);
+                         ProvinceToast.error('Gagal menghubungi server');
                      }
-                 });
-
-                 if (response.success) {
-                     ProvinceToast.success('Provinsi berhasil dihapus');
-
-                     // Clear hash if deleted province is currently viewed
-                     if (window.location.hash === `#${id}`) {
-                         window.location.hash = '';
-                     }
-
-                     this.refresh();
-                     $(document).trigger('province:deleted');
-                 } else {
-                     ProvinceToast.error(response.data?.message || 'Gagal menghapus provinsi');
                  }
-             } catch (error) {
-                 console.error('Delete province error:', error);
-                 ProvinceToast.error('Gagal menghubungi server');
-             }
+             });
          },
 
          handleHashChange() {

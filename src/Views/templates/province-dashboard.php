@@ -69,3 +69,9 @@
     require_once WILAYAH_INDONESIA_PATH . 'src/Views/templates/forms/create-province-form.php';
     require_once WILAYAH_INDONESIA_PATH . 'src/Views/templates/forms/edit-province-form.php';
     ?>
+    <!-- Modal Templates -->
+    <?php
+    if (function_exists('wilayah_render_confirmation_modal')) {
+        wilayah_render_confirmation_modal();
+    }
+    ?>

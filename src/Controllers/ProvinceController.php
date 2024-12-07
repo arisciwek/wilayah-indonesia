@@ -65,7 +65,7 @@ class ProvinceController {
         add_action('wp_ajax_delete_province', [$this, 'delete']);
 
     }
-
+    
     /**
      * Inisialisasi direktori log jika belum ada
      */
@@ -474,5 +474,5 @@ class ProvinceController {
             wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
-    
+
 }

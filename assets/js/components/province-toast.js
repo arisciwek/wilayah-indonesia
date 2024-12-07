@@ -1,185 +1,229 @@
 /**
  * Province Toast Component
- * 
+ *
  * @package     Wilayah_Indonesia
  * @subpackage  Assets/JS/Components
  * @version     1.0.0
  * @author      arisciwek
- * 
+ *
  * Path: assets/js/components/province-toast.js
- * 
+ *
  * Description: Komponen toast notification khusus untuk manajemen provinsi.
  *              Menangani feedback untuk operasi CRUD provinsi.
  *              Support queue system untuk multiple notifications.
  *              Includes custom styling dan animations.
  */
+ /**
+  * Province Toast Component
+  *
+  * @package     Wilayah_Indonesia
+  * @subpackage  Assets/JS/Components
+  * @version     1.1.0
+  * @author      arisciwek
+  */
 
-const ProvinceToast = {
-    container: null,
-    queue: [],
-    isProcessing: false,
-    defaultDuration: 3000,
+ const ProvinceToast = {
+     container: null,
+     queue: [],
+     isProcessing: false,
+     defaultDuration: 3000,
 
-    init() {
-        if (!this.container) {
-            this.container = document.createElement('div');
-            this.container.id = 'province-toast-container';
-            this.container.style.cssText = `
-                position: fixed;
-                top: 32px;
-                right: 20px;
-                z-index: 160000;
-                display: flex;
-                flex-direction: column;
-                gap: 10px;
-            `;
-            document.body.appendChild(this.container);
-        }
-    },
+     init() {
+         if (!this.container) {
+             this.container = document.createElement('div');
+             this.container.id = 'province-toast-container';
+             this.container.style.cssText = `
+                 position: fixed;
+                 top: 32px;
+                 right: 20px;
+                 z-index: 160000;
+                 display: flex;
+                 flex-direction: column;
+                 gap: 10px;
+                 max-width: 100%;
+                 pointer-events: none;
+             `;
+             document.body.appendChild(this.container);
+         }
+     },
 
-    show(message, type = 'info', duration = this.defaultDuration) {
-        this.init();
-        this.queue.push({ message, type, duration });
-        
-        if (!this.isProcessing) {
-            this.processQueue();
-        }
-    },
+     show(message, type = 'info', duration = this.defaultDuration) {
+         this.init();
 
-    async processQueue() {
-        if (this.queue.length === 0) {
-            this.isProcessing = false;
-            return;
-        }
+         // Allow array of messages
+         const messages = Array.isArray(message) ? message : [message];
 
-        this.isProcessing = true;
-        const { message, type, duration } = this.queue.shift();
-        
-        // Create toast element
-        const toast = document.createElement('div');
-        toast.className = `province-toast province-toast-${type}`;
-        toast.style.cssText = this.getToastStyles(type);
-        
-        // Support both string and array messages
-        if (Array.isArray(message)) {
-            message.forEach(msg => {
-                const p = document.createElement('p');
-                p.textContent = msg;
-                p.style.margin = '5px 0';
-                toast.appendChild(p);
-            });
-        } else {
-            toast.textContent = message;
-        }
+         // Add to queue
+         this.queue.push({ messages, type, duration });
 
-        // Add close button
-        const closeBtn = document.createElement('button');
-        closeBtn.innerHTML = '&times;';
-        closeBtn.style.cssText = `
-            position: absolute;
-            right: 8px;
-            top: 8px;
-            background: none;
-            border: none;
-            color: inherit;
-            font-size: 18px;
-            cursor: pointer;
-            opacity: 0.7;
-            padding: 0;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        `;
-        closeBtn.onclick = () => this.removeToast(toast);
-        toast.appendChild(closeBtn);
-        
-        // Add to container with animation
-        this.container.appendChild(toast);
-        await new Promise(resolve => setTimeout(resolve, 50));
-        toast.style.opacity = '1';
-        toast.style.transform = 'translateX(0)';
-        
-        // Auto remove after duration
-        setTimeout(() => this.removeToast(toast), duration);
-    },
+         if (!this.isProcessing) {
+             this.processQueue();
+         }
+     },
 
-    async removeToast(toast) {
-        if (!toast.isRemoving) {
-            toast.isRemoving = true;
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateX(100%)';
-            
-            await new Promise(resolve => setTimeout(resolve, 300));
-            if (toast.parentElement) {
-                toast.parentElement.removeChild(toast);
-            }
-            
-            this.processQueue();
-        }
-    },
+     async processQueue() {
+         if (this.queue.length === 0) {
+             this.isProcessing = false;
+             return;
+         }
 
-    getToastStyles(type) {
-        const baseStyles = `
-            position: relative;
-            padding: 12px 35px 12px 15px;
-            border-radius: 4px;
-            color: #fff;
-            font-size: 14px;
-            min-width: 250px;
-            max-width: 400px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-            margin: 0;
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.3s ease;
-        `;
+         this.isProcessing = true;
+         const { messages, type, duration } = this.queue.shift();
 
-        const colors = {
-            success: '#00a32a', // WordPress success green
-            error: '#d63638',   // WordPress error red
-            warning: '#dba617', // WordPress warning yellow
-            info: '#72aee6'     // WordPress info blue
-        };
+         // Create toast element
+         const toast = document.createElement('div');
+         toast.className = `province-toast province-toast-${type}`;
+         toast.style.cssText = this.getToastStyles(type);
 
-        return `${baseStyles}background-color: ${colors[type] || colors.info};`;
-    },
+         // Add messages
+         messages.forEach(msg => {
+             const p = document.createElement('p');
+             p.textContent = msg;
+             p.style.margin = '5px 0';
+             toast.appendChild(p);
+         });
 
-    // Convenience methods with WordPress-style messages
-    success(message, duration) {
-        this.show(message, 'success', duration);
-    },
+         // Add close button
+         const closeBtn = document.createElement('button');
+         closeBtn.innerHTML = '&times;';
+         closeBtn.style.cssText = `
+             position: absolute;
+             right: 8px;
+             top: 8px;
+             background: none;
+             border: none;
+             color: inherit;
+             font-size: 18px;
+             cursor: pointer;
+             opacity: 0.7;
+             padding: 0;
+             width: 20px;
+             height: 20px;
+             display: flex;
+             align-items: center;
+             justify-content: center;
+             pointer-events: auto;
+         `;
+         closeBtn.onclick = () => this.removeToast(toast);
+         toast.appendChild(closeBtn);
 
-    error(message, duration) {
-        this.show(message, 'error', duration);
-    },
+         // Add to container with animation
+         this.container.appendChild(toast);
+         await new Promise(resolve => setTimeout(resolve, 50));
+         toast.style.opacity = '1';
+         toast.style.transform = 'translateX(0)';
 
-    warning(message, duration) {
-        this.show(message, 'warning', duration);
-    },
+         // Auto remove after duration
+         const timeoutId = setTimeout(() => this.removeToast(toast), duration);
+         toast.dataset.timeoutId = timeoutId;
+     },
 
-    info(message, duration) {
-        this.show(message, 'info', duration);
-    },
+     async removeToast(toast) {
+         if (!toast.isRemoving) {
+             toast.isRemoving = true;
 
-    // Province-specific message shortcuts
-    created() {
-        this.success('Provinsi berhasil ditambahkan');
-    },
+             // Clear timeout if exists
+             if (toast.dataset.timeoutId) {
+                 clearTimeout(parseInt(toast.dataset.timeoutId));
+             }
 
-    updated() {
-        this.success('Provinsi berhasil diperbarui');
-    },
+             // Animate out
+             toast.style.opacity = '0';
+             toast.style.transform = 'translateX(100%)';
 
-    deleted() {
-        this.success('Provinsi berhasil dihapus');
-    },
+             await new Promise(resolve => setTimeout(resolve, 300));
+             if (toast.parentElement) {
+                 toast.parentElement.removeChild(toast);
+             }
 
-    ajaxError() {
-        this.error('Terjadi kesalahan saat menghubungi server. Silakan coba lagi.');
-    }
-};
+             this.processQueue();
+         }
+     },
 
-// Expose for global use
-window.ProvinceToast = ProvinceToast;
+     getToastStyles(type) {
+         const baseStyles = `
+             position: relative;
+             padding: 12px 35px 12px 15px;
+             border-radius: 4px;
+             color: #fff;
+             font-size: 14px;
+             min-width: 250px;
+             max-width: 400px;
+             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+             margin: 0;
+             opacity: 0;
+             transform: translateX(100%);
+             transition: all 0.3s ease;
+             pointer-events: auto;
+         `;
+
+         const colors = {
+             success: '#00a32a', // WordPress success green
+             error: '#d63638',   // WordPress error red
+             warning: '#dba617', // WordPress warning yellow
+             info: '#72aee6'     // WordPress info blue
+         };
+
+         return `${baseStyles}background-color: ${colors[type] || colors.info};`;
+     },
+
+     // Main notification methods
+     success(message, duration) {
+         this.show(message, 'success', duration);
+     },
+
+     error(message, duration) {
+         this.show(message, 'error', duration);
+     },
+
+     warning(message, duration) {
+         this.show(message, 'warning', duration);
+     },
+
+     info(message, duration) {
+         this.show(message, 'info', duration);
+     },
+
+     // Province-specific message methods
+     showValidationErrors(errors) {
+         if (typeof errors === 'string') {
+             this.error(errors);
+         } else if (Array.isArray(errors)) {
+             this.error(errors);
+         } else if (typeof errors === 'object') {
+             this.error(Object.values(errors));
+         }
+     },
+
+     showSuccessWithWarnings(message, warnings) {
+         // Show success first
+         this.success(message);
+
+         // Show warnings after a short delay if they exist
+         if (warnings && warnings.length) {
+             setTimeout(() => {
+                 this.warning(warnings);
+             }, 500);
+         }
+     },
+
+     // Pre-defined messages
+     showCreated() {
+         this.success('Provinsi berhasil ditambahkan');
+     },
+
+     showUpdated() {
+         this.success('Provinsi berhasil diperbarui');
+     },
+
+     showDeleted() {
+         this.success('Provinsi berhasil dihapus');
+     },
+
+     showServerError() {
+         this.error('Terjadi kesalahan saat menghubungi server. Silakan coba lagi.');
+     }
+ };
+
+ // Expose for global use
+ window.ProvinceToast = ProvinceToast;
