@@ -1,12 +1,27 @@
 <?php
 /**
- * File: PermissionModel.php
+ * Permission Model Class
+ *
+ * @package     Wilayah_Indonesia
+ * @subpackage  Models/Settings
+ * @version     1.1.0
+ * @author      arisciwek
+ *
  * Path: /wilayah-indonesia/src/Models/Settings/PermissionModel.php
+ *
  * Description: Model untuk mengelola hak akses plugin
- * Version: 1.0.0
- * Last modified: 2024-11-28 08:45:00
+ *
+ * Changelog:
+ * 1.1.0 - 2024-12-08
+ * - Added view_own_province capability
+ * - Updated default role capabilities for editor and author roles
+ * - Added documentation for view_own_province permission
+ *
+ * 1.0.0 - 2024-11-28
+ * - Initial release
+ * - Basic permission management
+ * - Default capabilities setup
  */
-
 namespace WilayahIndonesia\Models\Settings;
 
 class PermissionModel {
