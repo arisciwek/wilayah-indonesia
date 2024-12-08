@@ -4,7 +4,7 @@
  * Description: Handler untuk matrix permission
  * Version: 1.0.0
  * Last modified: 2024-12-02
- * 
+ *
  * Dependencies:
  * - jQuery
  * - wilayahToast
@@ -19,7 +19,7 @@
             this.submitBtn = $('#save-permissions');
             this.resetBtn = $('#reset-permissions');
             this.spinner = $('.spinner');
-            
+
             this.bindEvents();
         },
 
@@ -30,7 +30,7 @@
 
         handleSubmit(e) {
             e.preventDefault();
-            
+
             // Collect all checkbox data
             const permissions = {};
             this.form.find('input[type="checkbox"]').each(function() {
@@ -52,7 +52,7 @@
             // Show spinner and disable submit button
             this.spinner.addClass('is-active');
             this.submitBtn.prop('disabled', true);
-            
+
             $.ajax({
                 url: ajaxurl,
                 type: 'POST',
@@ -61,10 +61,10 @@
                     security: this.form.find('[name="security"]').val(),
                     permissions: permissions
                 },
-                success: (response) => {                    
+                success: (response) => {
                     if (response.success) {
                         wilayahToast.success(response.data.message || 'Hak akses berhasil diperbarui');
-                        
+
                         if (response.data.reload) {
                             window.location.reload();
                         }
@@ -85,44 +85,50 @@
 
         handleReset(e) {
             e.preventDefault();
-            
-            if (!confirm('Yakin ingin mereset semua hak akses ke default?')) {
-                return;
-            }
 
-            this.spinner.addClass('is-active');
-            this.resetBtn.prop('disabled', true);
-            
-            $.ajax({
-                url: ajaxurl,
-                type: 'POST',
-                data: {
-                    action: 'update_wilayah_permissions',
-                    security: this.form.find('[name="security"]').val(),
-                    reset_permissions: 1
-                },
-                success: (response) => {
-                    console.log('Reset response:', response); // Debug log
-                    
-                    if (response.success) {
-                        wilayahToast.success(response.data.message || 'Hak akses berhasil direset');
-                        if (response.data.reload) {
-                            window.location.reload();
+            WIModal.show({
+                title: 'Konfirmasi Reset',
+                message: 'Yakin ingin mereset semua hak akses ke default? Aksi ini tidak dapat dibatalkan.',
+                icon: 'warning',
+                type: 'warning',
+                confirmText: 'Reset',
+                confirmClass: 'button-danger',
+                cancelText: 'Batal',
+                onConfirm: () => {
+                    this.spinner.addClass('is-active');
+                    this.resetBtn.prop('disabled', true);
+
+                    $.ajax({
+                        url: ajaxurl,
+                        type: 'POST',
+                        data: {
+                            action: 'update_wilayah_permissions',
+                            security: this.form.find('[name="security"]').val(),
+                            reset_permissions: 1
+                        },
+                        success: (response) => {
+                            if (response.success) {
+                                wilayahToast.success(response.data.message || 'Hak akses berhasil direset');
+                                if (response.data.reload) {
+                                    window.location.reload();
+                                }
+                            } else {
+                                wilayahToast.error(response.data.message || 'Terjadi kesalahan saat mereset hak akses');
+                            }
+                        },
+                        error: (xhr, status, error) => {
+                            console.error('Reset Error:', {xhr, status, error});
+                            wilayahToast.error('Gagal menghubungi server. Silakan coba lagi.');
+                        },
+                        complete: () => {
+                            this.spinner.removeClass('is-active');
+                            this.resetBtn.prop('disabled', false);
                         }
-                    } else {
-                        wilayahToast.error(response.data.message || 'Terjadi kesalahan saat mereset hak akses');
-                    }
-                },
-                error: (xhr, status, error) => {
-                    console.error('Reset Error:', {xhr, status, error}); // Debug log
-                    wilayahToast.error('Gagal menghubungi server. Silakan coba lagi.');
-                },
-                complete: () => {
-                    this.spinner.removeClass('is-active');
-                    this.resetBtn.prop('disabled', false);
+                    });
                 }
             });
         }
+        
     };
 
     // Initialize when document is ready
@@ -133,4 +139,3 @@
     });
 
 })(jQuery);
-

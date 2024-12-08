@@ -18,6 +18,7 @@ class Wilayah_Indonesia_Dependencies {
         $this->plugin_name = $plugin_name;
         $this->version = $version;
     }
+
     public function enqueue_styles() {
         $screen = get_current_screen();
         if (!$screen) return;
@@ -25,6 +26,7 @@ class Wilayah_Indonesia_Dependencies {
         // Settings page styles
         if ($screen->id === 'wilayah-indonesia_page_wilayah-indonesia-settings') {
             wp_enqueue_style('wilayah-settings', WILAYAH_INDONESIA_URL . 'assets/css/settings/settings-style.css', [], $this->version);
+            wp_enqueue_style('wilayah-modal', WILAYAH_INDONESIA_URL . 'assets/css/components/confirmation-modal.css', [], $this->version);
 
             $current_tab = isset($_GET['tab']) ? sanitize_key($_GET['tab']) : 'general';
             switch ($current_tab) {
@@ -56,6 +58,8 @@ class Wilayah_Indonesia_Dependencies {
        // Settings page scripts
        if ($screen->id === 'wilayah-indonesia_page_wilayah-indonesia-settings') {
            wp_enqueue_script('wilayah-toast', WILAYAH_INDONESIA_URL . 'assets/js/components/toast.js', ['jquery'], $this->version, true);
+           // Tambahkan ini
+           wp_enqueue_script('confirmation-modal', WILAYAH_INDONESIA_URL . 'assets/js/components/confirmation-modal.js', ['jquery'], $this->version, true);
            wp_enqueue_script('wilayah-settings', WILAYAH_INDONESIA_URL . 'assets/js/settings/settings-script.js', ['jquery', 'wilayah-toast'], $this->version, true);
 
            if (isset($_GET['tab']) && $_GET['tab'] === 'permission') {
@@ -94,11 +98,7 @@ class Wilayah_Indonesia_Dependencies {
                 'nonce' => wp_create_nonce('wilayah_nonce')
             ]);
         }
-    }
-    public static function load_template_part($template) {
-        $template_path = WILAYAH_INDONESIA_PATH . 'src/Views/templates/province/partials/_' . $template . '.php';
-        if (file_exists($template_path)) {
-            include $template_path;
-        }
+
+
     }
 }
