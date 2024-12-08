@@ -171,30 +171,24 @@
                  this.hideLoading();
              }
          },
-
          displayData(data) {
              if (!data || !data.province) {
                  ProvinceToast.error('Data provinsi tidak valid');
                  return;
              }
 
-             // Update container classes
              this.components.container.addClass('with-right-panel');
              this.components.rightPanel.addClass('visible');
 
-             // Format dates
              const createdAt = new Date(data.province.created_at).toLocaleString('id-ID');
              const updatedAt = new Date(data.province.updated_at).toLocaleString('id-ID');
 
-             // Populate data
-             this.components.detailsPanel.html(`
-                 <h3>${data.province.name}</h3>
-                 <div class="meta-info">
-                     <p><strong>Jumlah Kabupaten/Kota:</strong> ${data.regency_count}</p>
-                     <p><strong>Dibuat:</strong> ${createdAt}</p>
-                     <p><strong>Terakhir diupdate:</strong> ${updatedAt}</p>
-                 </div>
-             `);
+             // Mengisi data ke elemen yang sudah ada
+             $('#province-header-name').text(data.province.name);
+             $('#province-name').text(data.province.name);
+             $('#province-regency-count').text(data.regency_count);
+             $('#province-created-at').text(createdAt);
+             $('#province-updated-at').text(updatedAt);
 
              // Highlight in DataTable if available
              if (window.ProvinceDataTable) {
@@ -241,7 +235,7 @@
                  window.location.hash = data.id;
              }
          },
-         
+
          handleUpdated(data) {
              if (data && data.data && data.data.province) {
                  if (this.currentId === data.data.province.id) {

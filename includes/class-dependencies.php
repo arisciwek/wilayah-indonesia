@@ -18,7 +18,6 @@ class Wilayah_Indonesia_Dependencies {
         $this->plugin_name = $plugin_name;
         $this->version = $version;
     }
-
     public function enqueue_styles() {
         $screen = get_current_screen();
         if (!$screen) return;
@@ -95,7 +94,11 @@ class Wilayah_Indonesia_Dependencies {
                 'nonce' => wp_create_nonce('wilayah_nonce')
             ]);
         }
-
-
+    }
+    public static function load_template_part($template) {
+        $template_path = WILAYAH_INDONESIA_PATH . 'src/Views/templates/province/partials/_' . $template . '.php';
+        if (file_exists($template_path)) {
+            include $template_path;
+        }
     }
 }
