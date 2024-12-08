@@ -1,15 +1,28 @@
 <?php
 /**
- * File: class-dependencies.php
+ * Dependencies Handler Class
+ *
+ * @package     Wilayah_Indonesia
+ * @subpackage  Includes
+ * @version     1.0.0
+ * @author      arisciwek
+ *
  * Path: /wilayah-indonesia/includes/class-dependencies.php
- * Description: Menangani dependencies plugin seperti CSS, JavaScript, dan library eksternal
- * Last modified: 2024-11-23
+ *
+ * Description: Menangani dependencies plugin seperti CSS, JavaScript,
+ *              dan library eksternal
+ *
  * Changelog:
- *   - 2024-11-23: Initial creation
- *   - 2024-11-23: Added asset enqueuing methods
- *   - 2024-11-23: Revised to use CDN for external libraries
+ * 1.0.1 - 2024-12-08
+ * - Added modal dependencies for settings page
+ * - Added confirmation-modal.js and CSS loading
+ * - Updated dependencies for permissions script
+ *
+ * 1.0.0 - 2024-11-23
+ * - Initial creation
+ * - Added asset enqueuing methods
+ * - Added CDN dependencies
  */
-
 class Wilayah_Indonesia_Dependencies {
     private $plugin_name;
     private $version;
