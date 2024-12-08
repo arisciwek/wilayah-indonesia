@@ -15,6 +15,12 @@
 *              Includes validasi permission dan ownership.
 *
 * Changelog:
+* 1.0.1 - 2024-12-08
+* - Added view_own_province validation in validateView method
+* - Updated permission validation messages
+* - Enhanced error handling for permission checks
+*
+* Changelog:
 * 1.0.0 - 2024-12-02 15:00:00
 * - Initial release
 * - Added create validation
@@ -163,7 +169,7 @@ class ProvinceValidator {
 
         return $errors;
     }
-    
+
    /**
     * Helper function to sanitize input data
     */
