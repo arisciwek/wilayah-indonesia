@@ -1,15 +1,35 @@
 /**
- * File: permissions-script.js
+ * Permission Matrix Script
+ *
+ * @package     Wilayah_Indonesia
+ * @subpackage  Assets/JS/Settings
+ * @version     1.0.0
+ * @author      arisciwek
+ *
  * Path: /wilayah-indonesia/assets/js/settings/permissions-script.js
+ *
  * Description: Handler untuk matrix permission
- * Version: 1.0.0
- * Last modified: 2024-12-02
+ *              Menangani update dan reset permission matrix
+ *              Terintegrasi dengan modal konfirmasi dan toast notifications
  *
  * Dependencies:
  * - jQuery
  * - wilayahToast
+ * - WIModal component
+ *
+ * Changelog:
+ * 1.0.1 - 2024-12-08
+ * - Replaced native confirm with WIModal for reset confirmation
+ * - Added warning type modal styling
+ * - Enhanced UX for reset operation
+ * - Improved error handling and feedback
+ *
+ * 1.0.0 - 2024-12-02
+ * - Initial implementation
+ * - Basic permission matrix handling
+ * - AJAX integration
+ * - Toast notifications
  */
-
 (function($) {
     'use strict';
 
@@ -128,7 +148,7 @@
                 }
             });
         }
-        
+
     };
 
     // Initialize when document is ready
