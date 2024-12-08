@@ -1,10 +1,22 @@
 <?php
 /**
- * File: settings-page.php
+ * Settings Page Template
+ *
+ * @package     Wilayah_Indonesia
+ * @subpackage  Views/Templates/Settings
+ * @version     1.0.0
+ * @author      arisciwek
+ *
  * Path: /wilayah-indonesia/src/Views/templates/settings/settings-page.php
+ *
  * Description: Main settings page template that includes tab navigation
- * Version: 1.0.0
- * Last modified: 2024-11-25 06:15:00
+ *              Handles tab switching and settings error notices
+ *
+ * Changelog:
+ * 1.0.1 - 2024-12-08
+ * - Added WIModal template integration
+ * - Enhanced template structure for modals
+ * - Improved documentation
  *
  * Changelog:
  * v1.0.0 - 2024-11-25
