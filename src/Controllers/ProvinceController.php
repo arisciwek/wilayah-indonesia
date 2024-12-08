@@ -16,6 +16,12 @@
 *              Menyediakan endpoints untuk DataTables server-side.
 *
 * Changelog:
+* 1.0.1 - 2024-12-08
+* - Added view_own_province permission check in show method
+* - Enhanced permission validation
+* - Improved error handling for permission checks
+*
+* Changelog:
 * 1.0.0 - 2024-12-03 14:30:00
 * - Refactor CRUD responses untuk panel kanan
 * - Added cache integration di semua endpoints
@@ -419,7 +425,7 @@ class ProvinceController {
             wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
-    
+
     public function show($id) {
         try {
             check_ajax_referer('wilayah_nonce', 'nonce');
