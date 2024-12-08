@@ -65,7 +65,7 @@ class ProvinceController {
         add_action('wp_ajax_delete_province', [$this, 'delete']);
 
     }
-    
+
     /**
      * Inisialisasi direktori log jika belum ada
      */
@@ -419,6 +419,7 @@ class ProvinceController {
             wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
+    
     public function show($id) {
         try {
             check_ajax_referer('wilayah_nonce', 'nonce');
@@ -433,6 +434,12 @@ class ProvinceController {
                 throw new \Exception('Province not found');
             }
 
+            // Add permission check
+            if (!current_user_can('view_province_detail') &&
+                (!current_user_can('view_own_province') || $province->created_by !== get_current_user_id())) {
+                throw new \Exception('You do not have permission to view this province');
+            }
+
             wp_send_json_success([
                 'province' => $province,
                 'regency_count' => $this->model->getRegencyCount($id)
@@ -442,7 +449,6 @@ class ProvinceController {
             wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
-
 
     public function delete() {
         try {

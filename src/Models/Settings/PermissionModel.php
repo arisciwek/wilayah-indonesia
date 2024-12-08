@@ -13,6 +13,7 @@ class PermissionModel {
     private $default_capabilities = [
         'view_province_list' => 'Lihat Daftar Provinsi',
         'view_province_detail' => 'Lihat Detail Provinsi',
+        'view_own_province' => 'Lihat Provinsi Sendiri',  // Tambahkan ini
         'add_province' => 'Tambah Provinsi',
         'edit_all_provinces' => 'Edit Semua Provinsi',
         'edit_own_province' => 'Edit Provinsi Sendiri',
@@ -20,9 +21,9 @@ class PermissionModel {
     ];
 
     private $default_role_caps = [
-        'editor' => ['view_province_list', 'view_province_detail', 'edit_own_province'],
-        'author' => ['view_province_list', 'view_province_detail'],
-        'contributor' => ['view_province_list']
+        'editor' => ['view_province_list', 'view_province_detail', 'view_own_province', 'edit_own_province'],
+        'author' => ['view_province_list', 'view_province_detail', 'view_own_province'],
+        'contributor' => ['view_own_province']
     ];
 
     public function getAllCapabilities(): array {
@@ -89,7 +90,7 @@ class PermissionModel {
             }
         }
     }
-    
+
     public function resetToDefault(): bool {
     try {
         // Reset semua role ke default
