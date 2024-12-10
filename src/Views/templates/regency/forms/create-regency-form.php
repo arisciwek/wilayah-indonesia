@@ -23,34 +23,55 @@
  */
  defined('ABSPATH') || exit;
  ?>
+ <div id="create-regency-modal" class="modal-overlay wi-province-modal" style="display: none;">
+     <div class="modal-container">
+         <div class="modal-header">
+             <h3><?php _e('Tambah Kabupaten/Kota', 'wilayah-indonesia'); ?></h3>
+             <button type="button" class="modal-close" aria-label="Close">
+                 <span aria-hidden="true">&times;</span>
+             </button>
+         </div>
 
-<div id="regency-list" class="tab-content">
-    <div class="wi-regency-header">
-        <div class="wi-header-actions">
-            <?php if (current_user_can('add_regency')): ?>
-                <button type="button" class="button button-primary" id="add-regency-btn">
-                    <i class="dashicons dashicons-plus"></i>
-                    <?php _e('Tambah Kabupaten/Kota', 'wilayah-indonesia'); ?>
-                </button>
-            <?php endif; ?>
-        </div>
-    </div>
+         <form id="create-regency-form" method="post">
+             <?php wp_nonce_field('wilayah_nonce'); ?>
+             <input type="hidden" name="province_id" id="province_id">
 
-    <div class="wi-regency-content">
-        <div class="wi-table-container">
-            <table id="regency-table" class="display" style="width:100%">
-                <thead>
-                    <tr>
-                        <th><?php _e('Kode', 'wilayah-indonesia'); ?></th>
-                        <th><?php _e('Nama', 'wilayah-indonesia'); ?></th>
-                        <th><?php _e('Tipe', 'wilayah-indonesia'); ?></th>
-                        <th class="no-sort text-center"><?php _e('Aksi', 'wilayah-indonesia'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Data will be loaded via AJAX -->
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+             <div class="modal-content">
+                 <div class="wi-form-group">
+                     <label for="regency-name" class="required-field">
+                         <?php _e('Nama Kabupaten/Kota', 'wilayah-indonesia'); ?>
+                     </label>
+                     <input type="text"
+                            id="regency-name"
+                            name="name"
+                            class="regular-text"
+                            maxlength="100"
+                            required>
+                 </div>
+
+                 <div class="wi-form-group">
+                     <label for="regency-type" class="required-field">
+                         <?php _e('Tipe', 'wilayah-indonesia'); ?>
+                     </label>
+                     <select id="regency-type" name="type" required>
+                         <option value=""><?php _e('Pilih Tipe', 'wilayah-indonesia'); ?></option>
+                         <option value="kabupaten"><?php _e('Kabupaten', 'wilayah-indonesia'); ?></option>
+                         <option value="kota"><?php _e('Kota', 'wilayah-indonesia'); ?></option>
+                     </select>
+                 </div>
+             </div>
+
+             <div class="modal-footer">
+                 <div class="wi-form-actions">
+                     <button type="button" class="button cancel-create">
+                         <?php _e('Batal', 'wilayah-indonesia'); ?>
+                     </button>
+                     <button type="submit" class="button button-primary">
+                         <?php _e('Simpan', 'wilayah-indonesia'); ?>
+                     </button>
+                     <span class="spinner"></span>
+                 </div>
+             </div>
+         </form>
+     </div>
+ </div>

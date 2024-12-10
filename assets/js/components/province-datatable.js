@@ -179,6 +179,13 @@
              $table.on('click', '.view-province', (e) => {
                  const id = $(e.currentTarget).data('id');
                  if (id) window.location.hash = id;
+
+                 // Reset tab ke details
+                 $('.tab-content').removeClass('active');
+                 $('#province-details').addClass('active');
+                 $('.nav-tab').removeClass('nav-tab-active');
+                 $('.nav-tab[data-tab="province-details"]').addClass('nav-tab-active');
+
              });
 
              // Edit action

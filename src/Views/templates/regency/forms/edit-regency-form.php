@@ -24,7 +24,7 @@
  defined('ABSPATH') || exit;
  ?>
 
-<div id="edit-regency-modal" class="modal-overlay">
+<div id="edit-regency-modal" class="modal-overlay wi-province-modal">
     <div class="modal-container">
         <div class="modal-header">
             <h3><?php _e('Edit Kabupaten/Kota', 'wilayah-indonesia'); ?></h3>

@@ -121,6 +121,9 @@
 
          handleInitialState() {
              const hash = window.location.hash;
+
+             console.log('handleInitialState with hash:', window.location.hash);
+
              if (hash && hash.startsWith('#')) {
                  const id = hash.substring(1);
                  if (id && id !== this.currentId) {
@@ -138,11 +141,19 @@
 
              const id = hash.substring(1);
              if (id && id !== this.currentId) {
+
+                  // Reset ke tab details saat ganti provinsi
+                  $('.tab-content').removeClass('active');
+                  $('#province-details').addClass('active');
+                  $('.nav-tab').removeClass('nav-tab-active');
+                  $('.nav-tab[data-tab="province-details"]').addClass('nav-tab-active');
+
                  this.loadProvinceData(id);
              }
          },
 
          async loadProvinceData(id) {
+             console.log('Loading province data:', id);
              if (!id) return;
 
              this.showLoading();
@@ -172,10 +183,17 @@
              }
          },
          displayData(data) {
+            console.log('Displaying province data:', data);
              if (!data || !data.province) {
                  ProvinceToast.error('Data provinsi tidak valid');
                  return;
              }
+
+             // Reset state saat menampilkan data baru
+             $('.tab-content').removeClass('active');
+             $('#province-details').addClass('active');
+             $('.nav-tab').removeClass('nav-tab-active');
+             $('.nav-tab[data-tab="province-details"]').addClass('nav-tab-active');
 
              this.components.container.addClass('with-right-panel');
              this.components.rightPanel.addClass('visible');

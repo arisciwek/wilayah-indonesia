@@ -195,7 +195,12 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     width: 100%;
     max-width: 500px;
-    margin: 0 20px;
+    margin: auto;
+
+    align-items: center; /* vertical center */
+    justify-content: center; /* horizontal center */
+    padding: 1rem; /* Beri padding agar tidak terlalu dekat dengan edge di mobile */
+
     position: relative;
     animation: modalFadeIn 0.3s ease;
 }

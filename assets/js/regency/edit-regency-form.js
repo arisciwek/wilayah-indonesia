@@ -29,8 +29,12 @@
         form: null,
 
         init() {
+            console.log('EditRegencyForm initialized');
             this.modal = $('#edit-regency-modal');
             this.form = $('#edit-regency-form');
+
+            // Pastikan modal tersembunyi saat inisialisasi
+            this.modal.hide();
 
             this.bindEvents();
             this.initializeValidation();
@@ -58,6 +62,7 @@
         },
 
         showEditForm(data) {
+            console.log('showEditForm called with data:', data);
             if (!data || !data.regency) {
                 ProvinceToast.error('Data kabupaten/kota tidak valid');
                 return;
@@ -235,6 +240,7 @@
 
     // Initialize when document is ready
     $(document).ready(() => {
+        console.log('Edit modal visibility:', $('#edit-regency-modal').is(':visible'));
         window.EditRegencyForm = EditRegencyForm;
         EditRegencyForm.init();
     });

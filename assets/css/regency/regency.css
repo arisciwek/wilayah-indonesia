@@ -171,6 +171,10 @@ div#regency-table_filter input {
         line-height: 26px;
     }
 }
+.modal-overlay {
+    display: none;
+    /* ... other styles ... */
+}
 
 /* Form Modal Enhancements */
 .modal-overlay.regency-modal {

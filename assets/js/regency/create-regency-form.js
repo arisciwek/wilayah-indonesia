@@ -34,6 +34,9 @@
             this.modal = $('#create-regency-modal');
             this.form = $('#create-regency-form');
 
+            // Tambahkan ini untuk memastikan modal tersembunyi saat init
+            this.modal.hide();  // Atau .fadeOut(0)
+
             this.bindEvents();
             this.initializeValidation();
         },

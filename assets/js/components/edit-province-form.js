@@ -92,10 +92,12 @@
         },
 
         hideModal() {
-            this.modal.fadeOut(300, () => {
-                this.resetForm();
-                $('#edit-mode').hide();
-            });
+            this.modal
+                .removeClass('active')
+                .fadeOut(300, () => {
+                    this.resetForm();
+                    $('#edit-mode').hide();
+                });
         },
 
         initializeValidation() {
