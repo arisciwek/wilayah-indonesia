@@ -62,7 +62,7 @@
              this.handleInitialHash();
          },
 
-         initDataTable() {
+        initDataTable() {
             if ($.fn.DataTable.isDataTable('#provinces-table')) {
                 $('#provinces-table').DataTable().destroy();
             }
@@ -71,6 +71,7 @@
             $('#provinces-table').empty().html(`
                 <thead>
                     <tr>
+                        <th>Kode</th>
                         <th>Nama Provinsi</th>
                         <th>Jumlah Kab/Kota</th>
                         <th>Aksi</th>
@@ -99,12 +100,13 @@
                 },
                 columns: [
                     {
+                        data: 'code',
+                        title: 'Kode',
+                        width: '20px'
+                    },
+                    {
                         data: 'name',
-                        title: 'Nama Provinsi',
-                        render: (data, type, row) => {
-                            return type === 'display' ?
-                                $('<div/>').text(data).html() : data;
-                        }
+                        title: 'Nama Provinsi'
                     },
                     {
                         data: 'regency_count',
@@ -120,7 +122,7 @@
                         className: 'text-center nowrap'
                     }
                 ],
-                order: [[0, 'asc']],
+                order: [[0, 'asc']], // Default sort by code
                 pageLength: wilayahData.perPage || 10,
                 language: {
                     "emptyTable": "Tidak ada data yang tersedia",

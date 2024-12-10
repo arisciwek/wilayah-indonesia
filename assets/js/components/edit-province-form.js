@@ -79,13 +79,14 @@
             // Populate form data
             this.form.find('#province-id').val(data.province.id);
             this.form.find('[name="name"]').val(data.province.name);
+            this.form.find('[name="code"]').val(data.province.code);  // Tambahkan ini
 
             // Update modal title with province name
             this.modal.find('.modal-header h3').text(`Edit Provinsi: ${data.province.name}`);
 
             // Show modal with animation
             this.modal.fadeIn(300, () => {
-                this.form.find('[name="name"]').focus();
+                this.form.find('[name="code"]').focus();
             });
             $('#edit-mode').show();
         },
@@ -163,7 +164,7 @@
                 return true;
             }
         },
-        
+
         async handleUpdate(e) {
             e.preventDefault();
 
@@ -176,7 +177,9 @@
                 action: 'update_province',
                 nonce: wilayahData.nonce,
                 id: id,
-                name: this.form.find('[name="name"]').val().trim()
+                name: this.form.find('[name="name"]').val().trim(),
+                code: this.form.find('[name="code"]').val().trim()  // Pastikan ini ada
+
             };
 
             this.setLoadingState(true);

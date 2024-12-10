@@ -44,6 +44,22 @@ defined('ABSPATH') || exit;
                 <input type="hidden" name="action" value="create_province">
                 
                 <div class="wi-form-group">
+                    <label for="province-code" class="required-field">
+                        <?php _e('Kode Provinsi', 'wilayah-indonesia'); ?>
+                    </label>
+                    <input type="text" 
+                           id="province-code" 
+                           name="code" 
+                           class="small-text" 
+                           maxlength="2" 
+                           pattern="\d{2}"
+                           required>
+                    <p class="description">
+                        <?php _e('Masukkan 2 digit angka', 'wilayah-indonesia'); ?>
+                    </p>
+                </div>
+
+                <div class="wi-form-group">
                     <label for="province-name" class="required-field">
                         <?php _e('Nama Provinsi', 'wilayah-indonesia'); ?>
                     </label>

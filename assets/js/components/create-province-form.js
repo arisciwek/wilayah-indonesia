@@ -76,7 +76,7 @@
 
             // Show modal with animation
             this.modal.fadeIn(300);
-            this.form.find('[name="name"]').focus();
+            this.form.find('[name="code"]').focus();
         },
 
         hideModal() {
@@ -92,6 +92,12 @@
                         required: true,
                         minlength: 3,
                         maxlength: 100
+                    },
+                    code: {
+                        required: true,
+                        minlength: 2,
+                        maxlength: 2,
+                        digits: true
                     }
                 },
                 messages: {
@@ -99,6 +105,12 @@
                         required: 'Nama provinsi wajib diisi',
                         minlength: 'Nama provinsi minimal 3 karakter',
                         maxlength: 'Nama provinsi maksimal 100 karakter'
+                    },
+                    code: {
+                        required: 'Kode provinsi wajib diisi',
+                        minlength: 'Kode provinsi harus 2 digit',
+                        maxlength: 'Kode provinsi harus 2 digit',
+                        digits: 'Kode provinsi harus berupa angka'
                     }
                 },
                 errorElement: 'span',
@@ -154,6 +166,7 @@
 
         async handleCreate(e) {
             e.preventDefault();
+            console.log('Starting form submission...');
 
             if (!this.form.valid()) {
                 return;
@@ -161,10 +174,12 @@
 
             const requestData = {
                 action: 'create_province',
-                nonce: wilayahData.nonce,
-                name: this.form.find('[name="name"]').val().trim()
+                nonce: wilayahData.nonce,  // Gunakan nonce dari wilayahData
+                name: this.form.find('[name="name"]').val().trim(),
+                code: this.form.find('[name="code"]').val().trim()
             };
 
+            console.log('Request data:', requestData);  // Debug
             this.setLoadingState(true);
 
             try {
@@ -178,15 +193,12 @@
                     ProvinceToast.success('Provinsi berhasil ditambahkan');
                     this.hideModal();
 
-                    // Update URL hash to new province's ID
                     if (response.data.id) {
                         window.location.hash = response.data.id;
                     }
 
-                    // Trigger events for other components
                     $(document).trigger('province:created', [response.data]);
 
-                    // Refresh DataTable if exists
                     if (window.ProvinceDataTable) {
                         window.ProvinceDataTable.refresh();
                     }
@@ -195,7 +207,7 @@
                 }
             } catch (error) {
                 console.error('Create province error:', error);
-                ProvinceToast.error('Gagal menghubungi server');
+                ProvinceToast.error('Gagal menghubungi server. Silakan coba lagi.');
             } finally {
                 this.setLoadingState(false);
             }

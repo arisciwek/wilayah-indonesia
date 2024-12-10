@@ -21,7 +21,7 @@
  * - Improved cache integration
  * - Added method untuk DataTables server-side
  */
- 
+
  namespace WilayahIndonesia\Models;
 
  class ProvinceModel {
@@ -34,26 +34,27 @@
          $this->regency_table = $wpdb->prefix . 'wi_regencies';
      }
 
-     public function create(array $data): ?int {
-         global $wpdb;
+    public function create(array $data): ?int {
+        global $wpdb;
 
-         $result = $wpdb->insert(
-             $this->table,
-             [
-                 'name' => $data['name'],
-                 'created_by' => get_current_user_id(),
-                 'created_at' => current_time('mysql'),
-                 'updated_at' => current_time('mysql')
-             ],
-             ['%s', '%d', '%s', '%s']
-         );
+        $result = $wpdb->insert(
+            $this->table,
+            [
+                'code' => $data['code'],
+                'name' => $data['name'],
+                'created_by' => get_current_user_id(),
+                'created_at' => current_time('mysql'),
+                'updated_at' => current_time('mysql')
+            ],
+            ['%s', '%s', '%d', '%s', '%s']
+        );
 
-         if ($result === false) {
-             return null;
-         }
+        if ($result === false) {
+            return null;
+        }
 
-         return (int) $wpdb->insert_id;
-     }
+        return (int) $wpdb->insert_id;
+    }
 
      public function find($id): ?object {
          global $wpdb;
@@ -79,19 +80,27 @@
          return $result;
      }
 
-     public function update(int $id, array $data): bool {
-         global $wpdb;
+    public function update(int $id, array $data): bool {
+        global $wpdb;
 
-         $result = $wpdb->update(
-             $this->table,
-             array_merge($data, ['updated_at' => current_time('mysql')]),
-             ['id' => $id],
-             ['%s', '%s'],
-             ['%d']
-         );
+        $updateData = array_merge($data, ['updated_at' => current_time('mysql')]);
+        $format = [];
 
-         return $result !== false;
-     }
+        // Add format for each field
+        if (isset($data['code'])) $format[] = '%s';
+        if (isset($data['name'])) $format[] = '%s';
+        $format[] = '%s'; // for updated_at
+
+        $result = $wpdb->update(
+            $this->table,
+            $updateData,
+            ['id' => $id],
+            $format,
+            ['%d']
+        );
+
+        return $result !== false;
+    }
 
      public function delete(int $id): bool {
          global $wpdb;
@@ -102,6 +111,22 @@
              ['%d']
          ) !== false;
      }
+
+    public function existsByCode(string $code, ?int $excludeId = null): bool {
+        global $wpdb;
+
+        $sql = "SELECT EXISTS (SELECT 1 FROM {$this->table} WHERE code = %s";
+        $params = [$code];
+
+        if ($excludeId) {
+            $sql .= " AND id != %d";
+            $params[] = $excludeId;
+        }
+
+        $sql .= ") as result";
+
+        return (bool) $wpdb->get_var($wpdb->prepare($sql, $params));
+    }
 
      public function getRegencyCount(int $id): int {
          global $wpdb;
@@ -184,4 +209,5 @@
 
          return (bool) $wpdb->get_var($wpdb->prepare($sql, $params));
      }
+     
  }

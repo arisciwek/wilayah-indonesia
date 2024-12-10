@@ -130,13 +130,8 @@ class ProvinceController {
 
     public function handleDataTableRequest() {
         try {
-            // Debug incoming request
-            $this->debug_log('DataTable Request Parameters:');
-            $this->debug_log($_POST);
-
             // Verify nonce
             if (!check_ajax_referer('wilayah_nonce', 'nonce', false)) {
-                $this->debug_log('Nonce verification failed');
                 throw new \Exception('Security check failed');
             }
 
@@ -146,31 +141,20 @@ class ProvinceController {
             $length = isset($_POST['length']) ? intval($_POST['length']) : 10;
             $search = isset($_POST['search']['value']) ? sanitize_text_field($_POST['search']['value']) : '';
 
-            $this->debug_log(sprintf(
-                'Processed Parameters - Draw: %d, Start: %d, Length: %d, Search: %s',
-                $draw,
-                $start,
-                $length,
-                $search
-            ));
-
             // Get order parameters
             $orderColumn = isset($_POST['order'][0]['column']) ? intval($_POST['order'][0]['column']) : 0;
             $orderDir = isset($_POST['order'][0]['dir']) ? sanitize_text_field($_POST['order'][0]['dir']) : 'asc';
 
             // Map column index to column name
-            $columns = ['name', 'regency_count', 'actions'];
-            $orderBy = isset($columns[$orderColumn]) ? $columns[$orderColumn] : 'name';
+            $columns = ['code', 'name', 'regency_count', 'actions'];
+            $orderBy = isset($columns[$orderColumn]) ? $columns[$orderColumn] : 'code';
 
             if ($orderBy === 'actions') {
-                $orderBy = 'name'; // Default sort jika kolom actions
+                $orderBy = 'code'; // Default sort jika kolom actions
             }
 
             try {
                 $result = $this->model->getDataTableData($start, $length, $search, $orderBy, $orderDir);
-
-                $this->debug_log('Model Result:');
-                $this->debug_log($result);
 
                 if (!$result) {
                     throw new \Exception('No data returned from model');
@@ -180,6 +164,7 @@ class ProvinceController {
                 foreach ($result['data'] as $province) {
                     $data[] = [
                         'id' => $province->id,
+                        'code' => esc_html($province->code),
                         'name' => esc_html($province->name),
                         'regency_count' => intval($province->regency_count),
                         'actions' => $this->generateActionButtons($province)
@@ -196,12 +181,10 @@ class ProvinceController {
                 wp_send_json($response);
 
             } catch (\Exception $modelException) {
-                $this->debug_log('Model Error: ' . $modelException->getMessage());
                 throw new \Exception('Database error: ' . $modelException->getMessage());
             }
 
         } catch (\Exception $e) {
-            $this->debug_log('DataTable Handler Error: ' . $e->getMessage());
             wp_send_json_error([
                 'message' => $e->getMessage(),
                 'code' => $e->getCode()
@@ -239,148 +222,72 @@ class ProvinceController {
 
         return $actions;
     }
-/*
+
     public function store() {
-        check_ajax_referer('wilayah_nonce', 'nonce');
+        try {
+            check_ajax_referer('wilayah_nonce', 'nonce');
 
-        if (!current_user_can('create_province')) {
-            wp_send_json_error('Insufficient permissions');
+            if (!current_user_can('create_province')) {
+                wp_send_json_error(['message' => __('Insufficient permissions', 'wilayah-indonesia')]);
+                return;
+            }
+
+            $data = [
+                'name' => sanitize_text_field($_POST['name']),
+                'code' => sanitize_text_field($_POST['code']),
+                'created_by' => get_current_user_id()
+            ];
+
+            // Validasi input
+            $errors = $this->validator->validateCreate($data);
+            if (!empty($errors)) {
+                error_log('Validation errors found: ' . print_r($errors, true));
+                wp_send_json_error([
+                    'message' => is_array($errors) ? implode(', ', $errors) : $errors,
+                    'errors' => $errors
+                ]);
+                return;
+            }
+
+            // Get ID from creation
+            $id = $this->model->create($data);
+            if (!$id) {
+                error_log('Failed to create province');
+                wp_send_json_error([
+                    'message' => __('Failed to create province', 'wilayah-indonesia')
+                ]);
+                return;
+            }
+
+            error_log('Province created with ID: ' . $id);
+
+            // Get fresh data for response
+            $province = $this->model->find($id);
+            if (!$province) {
+                error_log('Failed to retrieve created province');
+                wp_send_json_error([
+                    'message' => __('Failed to retrieve created province', 'wilayah-indonesia')
+                ]);
+                return;
+            }
+
+            wp_send_json_success([
+                'id' => $id,
+                'province' => $province,
+                'regency_count' => 0,
+                'message' => __('Province created successfully', 'wilayah-indonesia')
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Store error: ' . $e->getMessage());
+            error_log('Stack trace: ' . $e->getTraceAsString());
+            wp_send_json_error([
+                'message' => $e->getMessage() ?: 'Terjadi kesalahan saat menambah provinsi',
+                'error_details' => WP_DEBUG ? $e->getTraceAsString() : null
+            ]);
         }
-
-        $data = [
-            'name' => sanitize_text_field($_POST['name']),
-            'created_by' => get_current_user_id()
-        ];
-
-        $errors = $this->validator->validateCreate($data);
-        if (!empty($errors)) {
-            wp_send_json_error($errors);
-        }
-
-        // Get ID from creation
-        $id = $this->model->create($data);
-        if (!$id) {
-            wp_send_json_error('Failed to create province');
-        }
-
-        // Get fresh data for response
-        $province = $this->model->find($id);
-        if (!$province) {
-            wp_send_json_error('Failed to retrieve created province');
-        }
-
-        // Set cache with new data
-        $this->cache->setProvince($id, $province);
-
-        wp_send_json_success([
-            'id' => $id,
-            'data' => $province,
-            'regency_count' => 0, // New province has no regencies
-            'message' => 'Province created successfully'
-        ]);
     }
-*/
-    public function store() {
-    try {
-        check_ajax_referer('wilayah_nonce', 'nonce');
 
-        if (!current_user_can('create_province')) {
-            wp_send_json_error(['message' => __('Insufficient permissions', 'wilayah-indonesia')]);
-            return;
-        }
-
-        $data = [
-            'name' => sanitize_text_field($_POST['name']),
-            'created_by' => get_current_user_id()
-        ];
-
-        // Validasi input
-        $errors = $this->validator->validateCreate($data);
-        if (!empty($errors)) {
-            wp_send_json_error(['message' => implode(', ', $errors)]);
-            return;
-        }
-
-        // Cek duplikasi sebelum insert
-        if ($this->model->existsByName($data['name'])) {
-            wp_send_json_error(['message' => __('Nama provinsi sudah ada', 'wilayah-indonesia')]);
-            return;
-        }
-
-        // Get ID from creation
-        $id = $this->model->create($data);
-        if (!$id) {
-            wp_send_json_error(['message' => __('Failed to create province', 'wilayah-indonesia')]);
-            return;
-        }
-
-        // Get fresh data for response
-        $province = $this->model->find($id);
-        if (!$province) {
-            wp_send_json_error(['message' => __('Failed to retrieve created province', 'wilayah-indonesia')]);
-            return;
-        }
-
-        // Set cache with new data
-        $this->cache->setProvince($id, $province);
-
-        wp_send_json_success([
-            'id' => $id,
-            'data' => $province,
-            'regency_count' => 0,
-            'message' => __('Province created successfully', 'wilayah-indonesia')
-        ]);
-
-    } catch (\Exception $e) {
-        // Log error untuk debugging
-        $this->debug_log('Store Province Error: ' . $e->getMessage());
-        wp_send_json_error(['message' => __('An error occurred while creating province', 'wilayah-indonesia')]);
-    }
-}
-
-/*
-    public function update($id) {
-        check_ajax_referer('wilayah_nonce', 'nonce');
-
-        $province = $this->model->find($id);
-        if (!$province) {
-            wp_send_json_error('Province not found');
-        }
-
-        if (!$this->canEditProvince($province)) {
-            wp_send_json_error('Insufficient permissions');
-        }
-
-        $data = [
-            'name' => sanitize_text_field($_POST['name'])
-        ];
-
-        $errors = $this->validator->validateUpdate($data, $id);
-        if (!empty($errors)) {
-            wp_send_json_error($errors);
-        }
-
-        if (!$this->model->update($id, $data)) {
-            wp_send_json_error('Failed to update province');
-        }
-
-        // Get fresh data for response
-        $province = $this->model->find($id);
-        if (!$province) {
-            wp_send_json_error('Failed to retrieve updated province');
-        }
-
-        // Update cache with new data
-        $this->cache->setProvince($id, $province);
-
-        wp_send_json_success([
-            'id' => $id,
-            'data' => $province,
-            'regency_count' => $this->model->getRegencyCount($id),
-            'message' => 'Province updated successfully'
-        ]);
-    }
-*/
     public function update() {
         try {
             check_ajax_referer('wilayah_nonce', 'nonce');
@@ -392,7 +299,8 @@ class ProvinceController {
 
             // Validasi input
             $data = [
-                'name' => sanitize_text_field($_POST['name'])
+                'name' => sanitize_text_field($_POST['name']),
+                'code' => sanitize_text_field($_POST['code'])  // Tambahkan ini
             ];
 
             $errors = $this->validator->validateUpdate($data, $id);

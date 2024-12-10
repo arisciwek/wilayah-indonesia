@@ -47,78 +47,90 @@ class ProvinceValidator {
    /**
     * Validate create operation
     */
-   public function validateCreate(array $data): array {
-       $errors = [];
+    public function validateCreate(array $data): array {
+        $errors = [];
 
-       // Permission check
-       if (!current_user_can('add_province')) {
-           $errors['permission'] = __('Anda tidak memiliki izin untuk menambah provinsi.', 'wilayah-indonesia');
-           return $errors;
-       }
+        // Permission check
+        if (!current_user_can('add_province')) {
+            $errors['permission'] = __('Anda tidak memiliki izin untuk menambah provinsi.', 'wilayah-indonesia');
+            return $errors;
+        }
 
-       // Basic validation
-       $name = trim(sanitize_text_field($data['name'] ?? ''));
-       if (empty($name)) {
-           $errors['name'] = __('Nama provinsi wajib diisi.', 'wilayah-indonesia');
-           return $errors;
-       }
+        // Code validation
+        $code = trim(sanitize_text_field($data['code'] ?? ''));
+        if (empty($code)) {
+            $errors['code'] = __('Kode provinsi wajib diisi.', 'wilayah-indonesia');
+        } elseif (!preg_match('/^\d{2}$/', $code)) {
+            $errors['code'] = __('Kode provinsi harus berupa 2 digit angka.', 'wilayah-indonesia');
+        } elseif ($this->province_model->existsByCode($code)) {
+            $errors['code'] = __('Kode provinsi sudah ada.', 'wilayah-indonesia');
+        }
 
-       // Length check
-       if (mb_strlen($name) > 100) {
-           $errors['name'] = __('Nama provinsi maksimal 100 karakter.', 'wilayah-indonesia');
-           return $errors;
-       }
+        // Name validation
+        $name = trim(sanitize_text_field($data['name'] ?? ''));
+        if (empty($name)) {
+            $errors['name'] = __('Nama provinsi wajib diisi.', 'wilayah-indonesia');
+        } elseif (mb_strlen($name) > 100) {
+            $errors['name'] = __('Nama provinsi maksimal 100 karakter.', 'wilayah-indonesia');
+        } elseif ($this->province_model->existsByName($name)) {
+            $errors['name'] = __('Nama provinsi sudah ada.', 'wilayah-indonesia');
+        }
 
-       // Unique check
-       if ($this->province_model->existsByName($name)) {
-           $errors['name'] = __('Nama provinsi sudah ada.', 'wilayah-indonesia');
-           return $errors;
-       }
-
-       return $errors;
-   }
+        return $errors;
+    }
 
    /**
     * Validate update operation
     */
-   public function validateUpdate(array $data, int $id): array {
-       $errors = [];
 
-       // Check if province exists
-       $province = $this->province_model->find($id);
-       if (!$province) {
-           $errors['id'] = __('Provinsi tidak ditemukan.', 'wilayah-indonesia');
-           return $errors;
-       }
+    public function validateUpdate(array $data, int $id): array {
+        $errors = [];
 
-       // Permission check
-       if (!current_user_can('edit_all_provinces') &&
-           (!current_user_can('edit_own_province') || $province->created_by !== get_current_user_id())) {
-           $errors['permission'] = __('Anda tidak memiliki izin untuk mengedit provinsi ini.', 'wilayah-indonesia');
-           return $errors;
-       }
+        // Check if province exists
+        $province = $this->province_model->find($id);
+        if (!$province) {
+            $errors['id'] = __('Provinsi tidak ditemukan.', 'wilayah-indonesia');
+            return $errors;
+        }
 
-       // Basic validation
-       $name = trim(sanitize_text_field($data['name'] ?? ''));
-       if (empty($name)) {
-           $errors['name'] = __('Nama provinsi wajib diisi.', 'wilayah-indonesia');
-           return $errors;
-       }
+        // Permission check
+        if (!current_user_can('edit_all_provinces') &&
+            (!current_user_can('edit_own_province') || $province->created_by !== get_current_user_id())) {
+            $errors['permission'] = __('Anda tidak memiliki izin untuk mengedit provinsi ini.', 'wilayah-indonesia');
+            return $errors;
+        }
 
-       // Length check
-       if (mb_strlen($name) > 100) {
-           $errors['name'] = __('Nama provinsi maksimal 100 karakter.', 'wilayah-indonesia');
-           return $errors;
-       }
+        // Basic validation
+        $name = trim(sanitize_text_field($data['name'] ?? ''));
+        if (empty($name)) {
+            $errors['name'] = __('Nama provinsi wajib diisi.', 'wilayah-indonesia');
+        }
 
-       // Unique check excluding current ID
-       if ($this->province_model->existsByName($name, $id)) {
-           $errors['name'] = __('Nama provinsi sudah ada.', 'wilayah-indonesia');
-           return $errors;
-       }
+        // Validate code
+        $code = trim(sanitize_text_field($data['code'] ?? ''));
+        if (empty($code)) {
+            $errors['code'] = __('Kode provinsi wajib diisi.', 'wilayah-indonesia');
+        } elseif (!preg_match('/^[0-9]{2}$/', $code)) {
+            $errors['code'] = __('Kode provinsi harus 2 digit angka.', 'wilayah-indonesia');
+        }
 
-       return $errors;
-   }
+        // Length check
+        if (mb_strlen($name) > 100) {
+            $errors['name'] = __('Nama provinsi maksimal 100 karakter.', 'wilayah-indonesia');
+        }
+
+        // Unique check excluding current ID
+        if ($this->province_model->existsByName($name, $id)) {
+            $errors['name'] = __('Nama provinsi sudah ada.', 'wilayah-indonesia');
+        }
+
+        // Check if code is unique (excluding current province)
+        if ($this->province_model->existsByCode($code, $id)) {
+            $errors['code'] = __('Kode provinsi sudah digunakan.', 'wilayah-indonesia');
+        }
+
+        return $errors;
+    }
 
    /**
     * Validate delete operation

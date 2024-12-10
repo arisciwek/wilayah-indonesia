@@ -2,6 +2,7 @@
 ├── assets
 │   ├── css
 │   │   ├── components
+│   │   │   ├── confirmation-modal.css
 │   │   │   └── toast.css
 │   │   ├── province.css
 │   │   ├── province-form.css
@@ -12,8 +13,10 @@
 │   │       └── settings-style.css
 │   └── js
 │       ├── components
+│       │   ├── confirmation-modal.js
+│       │   ├── create-province-form.js
+│       │   ├── edit-province-form.js
 │       │   ├── province-datatable.js
-│       │   ├── province-form.js
 │       │   ├── province-toast.js
 │       │   └── toast.js
 │       ├── province.js
@@ -27,6 +30,8 @@
 │   ├── class-dependencies.php
 │   └── class-loader.php
 ├── LICENSE
+├── logs
+│   └── province.log
 ├── README.md
 ├── sql
 │   └── province-table.sql
@@ -46,9 +51,16 @@
 │   ├── Validators
 │   │   └── ProvinceValidator.php
 │   └── Views
+│       ├── components
+│       │   └── confirmation-modal.php
 │       └── templates
 │           ├── forms
-│           │   └── create-province-form.php
+│           │   ├── create-province-form.php
+│           │   └── edit-province-form.php
+│           ├── province
+│           │   └── partials
+│           │       ├── _province_details.php
+│           │       └── _regency_list.php
 │           ├── province-dashboard.php
 │           ├── province-left-panel.php
 │           ├── province-right-panel.php
@@ -62,4 +74,4 @@
 ├── uninstall.php
 └── wilayah-indonesia.php
 
-22 directories, 40 files
+26 directories, 48 files
