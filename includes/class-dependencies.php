@@ -111,7 +111,5 @@ class Wilayah_Indonesia_Dependencies {
                 'nonce' => wp_create_nonce('wilayah_nonce')
             ]);
         }
-
-
     }
 }
