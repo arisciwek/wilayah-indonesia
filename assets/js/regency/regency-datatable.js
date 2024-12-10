@@ -3,25 +3,28 @@
  *
  * @package     Wilayah_Indonesia
  * @subpackage  Assets/JS/Regency
- * @version     1.0.0
+ * @version     1.1.0
  * @author      arisciwek
  *
  * Path: /wilayah-indonesia/assets/js/regency/regency-datatable.js
  *
  * Description: Komponen untuk mengelola DataTables kabupaten/kota.
- *              Menangani server-side processing, lazy loading,
- *              dan integrasi dengan komponen form terpisah.
- *              Terintegrasi dengan toast notifications.
+ *              Includes state management, export functions,
+ *              dan error handling yang lebih baik.
  *
  * Dependencies:
  * - jQuery
  * - DataTables library
  * - ProvinceToast for notifications
- * - CreateRegencyForm for handling create operations
- * - EditRegencyForm for handling edit operations
  *
- * Last modified: 2024-12-10
+ * Changelog:
+ * 1.1.0 - 2024-12-10
+ * - Added state management
+ * - Added export functionality
+ * - Enhanced error handling
+ * - Improved loading states
  */
+
 (function($) {
     'use strict';
 
@@ -30,16 +33,57 @@
         initialized: false,
         currentHighlight: null,
         provinceId: null,
+        $container: null,
+        $tableContainer: null,
+        $loadingState: null,
+        $emptyState: null,
+        $errorState: null,
 
         init(provinceId) {
+            // Cache DOM elements
+            this.$container = $('#regency-list');
+            this.$tableContainer = this.$container.find('.wi-table-container');
+            this.$loadingState = this.$container.find('.wi-loading-state');
+            this.$emptyState = this.$container.find('.wi-empty-state');
+            this.$errorState = this.$container.find('.wi-error-state');
+
             if (this.initialized && this.provinceId === provinceId) {
                 this.refresh();
                 return;
             }
 
             this.provinceId = provinceId;
+            this.showLoading();
             this.initDataTable();
             this.bindEvents();
+        },
+
+        showLoading() {
+            this.$tableContainer.hide();
+            this.$emptyState.hide();
+            this.$errorState.hide();
+            this.$loadingState.show();
+        },
+
+        showEmpty() {
+            this.$tableContainer.hide();
+            this.$loadingState.hide();
+            this.$errorState.hide();
+            this.$emptyState.show();
+        },
+
+        showError() {
+            this.$tableContainer.hide();
+            this.$loadingState.hide();
+            this.$emptyState.hide();
+            this.$errorState.show();
+        },
+
+        showTable() {
+            this.$loadingState.hide();
+            this.$emptyState.hide();
+            this.$errorState.hide();
+            this.$tableContainer.show();
         },
 
         initDataTable() {
@@ -58,8 +102,17 @@
                     </tr>
                 </thead>
                 <tbody></tbody>
+                <tfoot>
+                    <tr>
+                        <th>Kode</th>
+                        <th>Nama</th>
+                        <th>Tipe</th>
+                        <th>Aksi</th>
+                    </tr>
+                </tfoot>
             `);
 
+            const self = this;
             this.table = $('#regency-table').DataTable({
                 processing: true,
                 serverSide: true,
@@ -76,7 +129,15 @@
                     },
                     error: (xhr, error, thrown) => {
                         console.error('DataTables Error:', error);
-                        ProvinceToast.error('Gagal memuat data kabupaten/kota');
+                        this.showError();
+                    },
+                    dataSrc: function(response) {
+                        if (!response.data || response.data.length === 0) {
+                            self.showEmpty();
+                        } else {
+                            self.showTable();
+                        }
+                        return response.data;
                     }
                 },
                 columns: [
@@ -104,8 +165,9 @@
                         className: 'text-center nowrap'
                     }
                 ],
-                order: [[0, 'asc']], // Default sort by code
+                order: [[0, 'asc']],
                 pageLength: wilayahData.perPage || 10,
+                dom: 'lfrtip',
                 language: {
                     "emptyTable": "Tidak ada data yang tersedia",
                     "info": "Menampilkan _START_ hingga _END_ dari _TOTAL_ entri",
@@ -147,30 +209,39 @@
                     window.CreateRegencyForm.showModal(this.provinceId);
                 }
             });
+
+            // Reload button handler
+            this.$errorState.find('.reload-table').off('click').on('click', () => {
+                this.refresh();
+            });
+
+            // Export handlers
+            $('.export-excel').off('click').on('click', () => this.exportData('excel'));
+            $('.export-pdf').off('click').on('click', () => this.exportData('pdf'));
         },
 
-        bindActionButtons() {
-            const $table = $('#regency-table');
-            $table.off('click', '.view-regency, .edit-regency, .delete-regency');
+        async exportData(type) {
+            try {
+                const response = await $.ajax({
+                    url: wilayahData.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'export_regency',
+                        province_id: this.provinceId,
+                        type: type,
+                        nonce: wilayahData.nonce
+                    }
+                });
 
-            // View action
-            $table.on('click', '.view-regency', (e) => {
-                const id = $(e.currentTarget).data('id');
-                this.loadRegencyForView(id);
-            });
-
-            // Edit action
-            $table.on('click', '.edit-regency', (e) => {
-                e.preventDefault();
-                const id = $(e.currentTarget).data('id');
-                this.loadRegencyForEdit(id);
-            });
-
-            // Delete action
-            $table.on('click', '.delete-regency', (e) => {
-                const id = $(e.currentTarget).data('id');
-                this.handleDelete(id);
-            });
+                if (response.success && response.data.url) {
+                    window.location.href = response.data.url;
+                } else {
+                    ProvinceToast.error('Gagal mengekspor data');
+                }
+            } catch (error) {
+                console.error('Export error:', error);
+                ProvinceToast.error('Gagal menghubungi server');
+            }
         },
 
         async loadRegencyForView(id) {
@@ -263,31 +334,18 @@
             });
         },
 
-        highlightRow(id) {
-            if (this.currentHighlight) {
-                $(`tr[data-id="${this.currentHighlight}"]`).removeClass('highlight');
-            }
-
-            const $row = $(`tr[data-id="${id}"]`);
-            if ($row.length) {
-                $row.addClass('highlight');
-                this.currentHighlight = id;
-
-                // Scroll into view if needed
-                const container = this.table.table().container();
-                const rowTop = $row.position().top;
-                const containerHeight = $(container).height();
-                const scrollTop = $(container).scrollTop();
-
-                if (rowTop < scrollTop || rowTop > scrollTop + containerHeight) {
-                    $row[0].scrollIntoView({behavior: 'smooth', block: 'center'});
-                }
-            }
-        },
-
         refresh() {
+            this.showLoading();
             if (this.table) {
-                this.table.ajax.reload(null, false);
+                this.table.ajax.reload(() => {
+                    // Check if there's data after reload
+                    const info = this.table.page.info();
+                    if (info.recordsTotal === 0) {
+                        this.showEmpty();
+                    } else {
+                        this.showTable();
+                    }
+                }, false);
             }
         }
     };

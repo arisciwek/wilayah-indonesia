@@ -91,6 +91,10 @@ class WilayahIndonesia {
 
         require_once WILAYAH_INDONESIA_PATH . 'src/Views/components/confirmation-modal.php';
 
+        // Regency Related
+        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/regency/RegencyController.php';
+        require_once WILAYAH_INDONESIA_PATH . 'src/Models/Regency/RegencyModel.php';
+        require_once WILAYAH_INDONESIA_PATH . 'src/Validators/Regency/RegencyValidator.php';
 
         $this->loader = new Wilayah_Indonesia_Loader();
 

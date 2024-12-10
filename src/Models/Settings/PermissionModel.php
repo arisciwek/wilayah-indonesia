@@ -26,19 +26,48 @@ namespace WilayahIndonesia\Models\Settings;
 
 class PermissionModel {
     private $default_capabilities = [
+        // Province capabilities
         'view_province_list' => 'Lihat Daftar Provinsi',
         'view_province_detail' => 'Lihat Detail Provinsi',
-        'view_own_province' => 'Lihat Provinsi Sendiri',  // Tambahkan ini
+        'view_own_province' => 'Lihat Provinsi Sendiri',
         'add_province' => 'Tambah Provinsi',
         'edit_all_provinces' => 'Edit Semua Provinsi',
         'edit_own_province' => 'Edit Provinsi Sendiri',
-        'delete_province' => 'Hapus Provinsi'
+        'delete_province' => 'Hapus Provinsi',
+
+        // Regency capabilities
+        'view_regency_list' => 'Lihat Daftar Kabupaten/Kota',
+        'view_regency_detail' => 'Lihat Detail Kabupaten/Kota',
+        'view_own_regency' => 'Lihat Kabupaten/Kota Sendiri',
+        'add_regency' => 'Tambah Kabupaten/Kota',
+        'edit_all_regencies' => 'Edit Semua Kabupaten/Kota',
+        'edit_own_regency' => 'Edit Kabupaten/Kota Sendiri',
+        'delete_regency' => 'Hapus Kabupaten/Kota'
     ];
 
     private $default_role_caps = [
-        'editor' => ['view_province_list', 'view_province_detail', 'view_own_province', 'edit_own_province'],
-        'author' => ['view_province_list', 'view_province_detail', 'view_own_province'],
-        'contributor' => ['view_own_province']
+        'editor' => [
+            'view_province_list',
+            'view_province_detail',
+            'view_own_province',
+            'edit_own_province',
+            'view_regency_list',
+            'view_regency_detail',
+            'view_own_regency',
+            'edit_own_regency'
+        ],
+        'author' => [
+            'view_province_list',
+            'view_province_detail',
+            'view_own_province',
+            'view_regency_list',
+            'view_regency_detail',
+            'view_own_regency'
+        ],
+        'contributor' => [
+            'view_own_province',
+            'view_own_regency'
+        ]
     ];
 
     public function getAllCapabilities(): array {

@@ -13,6 +13,6 @@
     <?php
     // Include partial templates
     include WILAYAH_INDONESIA_PATH . 'src/Views/templates/province/partials/_province_details.php';
-    include WILAYAH_INDONESIA_PATH . 'src/Views/templates/province/partials/_regency_list.php';
+    include WILAYAH_INDONESIA_PATH . 'src/Views/templates/regency/partials/_regency_list.php';
     ?>
 </div>

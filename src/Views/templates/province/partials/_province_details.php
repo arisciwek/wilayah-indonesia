@@ -1,4 +1,8 @@
+<?php
 
+
+defined('ABSPATH') || exit;
+?>
 
 <div id="province-details" class="tab-content active">
     <h3 id="province-name"></h3>
