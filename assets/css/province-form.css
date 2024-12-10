@@ -5,9 +5,9 @@
  * @subpackage  Assets/CSS
  * @version     1.0.0
  * @author      arisciwek
- * 
+ *
  * Path: assets/css/province-form.css
- * 
+ *
  * Description: Styling untuk form provinsi.
  *              Includes validation states, loading indicators,
  *              dan toast notifications.
@@ -119,12 +119,12 @@
     .wi-form input[type="text"] {
         max-width: none;
     }
-    
+
     .wi-form .submit-wrapper {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .wi-form .submit-wrapper button {
         width: 100%;
     }
