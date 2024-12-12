@@ -30,7 +30,6 @@ class Wilayah_Indonesia_Activator {
         }
         return true;
     }
-
     public static function activate() {
         self::debug('Starting plugin activation...');
 
@@ -46,6 +45,14 @@ class Wilayah_Indonesia_Activator {
             $upgrade_result = self::upgradeDatabase();
             if (!$upgrade_result) {
                 self::debug('Failed to upgrade database');
+                return;
+            }
+
+            // Tambahkan ini
+            self::debug('Upgrading regencies database...');
+            $upgrade_regencies_result = self::upgradeRegenciesDatabase();
+            if (!$upgrade_regencies_result) {
+                self::debug('Failed to upgrade regencies database');
                 return;
             }
 
@@ -65,10 +72,10 @@ class Wilayah_Indonesia_Activator {
 
         } catch (\Exception $e) {
             self::debug('Critical error during activation: ' . $e->getMessage());
-            throw $e; // Re-throw for WordPress to handle
+            throw $e;
         }
     }
-
+    
     private static function createTables() {
         global $wpdb;
         self::debug('Starting table creation...');
@@ -94,6 +101,7 @@ class Wilayah_Indonesia_Activator {
         $sql_regencies = "CREATE TABLE IF NOT EXISTS `{$wpdb->prefix}wi_regencies` (
             `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             `province_id` bigint(20) UNSIGNED NOT NULL,
+            //`code` varchar(4) NOT NULL,               // Tambah ini
             `name` varchar(100) NOT NULL,
             `type` enum('kabupaten','kota') NOT NULL,
             `created_by` bigint(20) NOT NULL,
@@ -130,6 +138,76 @@ class Wilayah_Indonesia_Activator {
 
         self::debug('Tables created successfully');
         return true;
+    }
+
+    private static function upgradeRegenciesDatabase() {
+        global $wpdb;
+        self::debug('Starting regencies database upgrade...');
+
+        try {
+            $table_name = $wpdb->prefix . 'wi_regencies';
+            self::debug("Checking for 'code' column in table: {$table_name}");
+
+            $row = $wpdb->get_results("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                                      WHERE TABLE_NAME = '{$table_name}'
+                                      AND COLUMN_NAME = 'code'");
+
+            if (empty($row)) {
+                self::debug("'code' column not found in regencies, starting upgrade process...");
+
+                // 1. Tambahkan kolom tanpa constraint
+                $add_column_sql = "ALTER TABLE {$table_name} ADD COLUMN `code` varchar(4) NULL";
+                self::debug("Adding code column with query:", $add_column_sql);
+                $wpdb->query($add_column_sql);
+                if (!self::logDbError($wpdb, 'add regency code column')) {
+                    return false;
+                }
+
+                // 2. Update dengan format: provinceCode + autoincrement
+                $update_sql = "UPDATE {$table_name} r
+                              JOIN {$wpdb->prefix}wi_provinces p ON r.province_id = p.id
+                              SET r.code = CONCAT(p.code, LPAD(r.id, 2, '0'))
+                              WHERE r.code IS NULL OR r.code = ''";
+                self::debug("Updating regency codes with query:", $update_sql);
+                $wpdb->query($update_sql);
+                if (!self::logDbError($wpdb, 'update regency codes')) {
+                    return false;
+                }
+
+                // 3. Verifikasi tidak ada duplikat
+                $duplicate_check = $wpdb->get_results("
+                    SELECT code, COUNT(*) as count
+                    FROM {$table_name}
+                    GROUP BY code
+                    HAVING count > 1
+                ");
+
+                if (!empty($duplicate_check)) {
+                    self::debug("Found duplicate regency codes:", $duplicate_check);
+                    return false;
+                }
+
+                // 4. Tambahkan constraint
+                self::debug("Adding regency code constraints...");
+                $constraint_sql = "ALTER TABLE {$table_name}
+                                 MODIFY code varchar(4) NOT NULL,
+                                 ADD UNIQUE KEY `code` (`code`)";
+                $wpdb->query($constraint_sql);
+                if (!self::logDbError($wpdb, 'add regency code constraints')) {
+                    return false;
+                }
+
+                self::debug("'code' column upgrade for regencies completed successfully");
+            } else {
+                self::debug("'code' column already exists in regencies table");
+            }
+
+            return true;
+
+        } catch (\Exception $e) {
+            self::debug('Error during regencies database upgrade: ' . $e->getMessage());
+            return false;
+        }
     }
 
     private static function upgradeDatabase() {
@@ -200,7 +278,7 @@ class Wilayah_Indonesia_Activator {
             return false;
         }
     }
-    
+
     private static function addVersion() {
         self::debug('Adding plugin version to options...');
         $result = add_option('wilayah_indonesia_version', WILAYAH_INDONESIA_VERSION);

@@ -29,12 +29,8 @@
         form: null,
 
         init() {
-            console.log('EditRegencyForm initialized');
             this.modal = $('#edit-regency-modal');
             this.form = $('#edit-regency-form');
-
-            // Pastikan modal tersembunyi saat inisialisasi
-            this.modal.hide();
 
             this.bindEvents();
             this.initializeValidation();
@@ -44,9 +40,12 @@
             // Form events
             this.form.on('submit', (e) => this.handleUpdate(e));
 
-            // Input validation events
-            this.form.on('input', 'input[name="name"]', (e) => {
-                this.validateField(e.target);
+            // Edit button handler for DataTable rows
+            $(document).on('click', '.edit-regency', (e) => {
+                const id = $(e.currentTarget).data('id');
+                if (id) {
+                    this.loadRegencyData(id);
+                }
             });
 
             // Modal events
@@ -61,8 +60,30 @@
             });
         },
 
+        async loadRegencyData(id) {
+            try {
+                const response = await $.ajax({
+                    url: wilayahData.ajaxUrl,
+                    type: 'POST',
+                    data: {
+                        action: 'get_regency',
+                        id: id,
+                        nonce: wilayahData.nonce
+                    }
+                });
+
+                if (response.success) {
+                    this.showEditForm(response.data);
+                } else {
+                    ProvinceToast.error(response.data?.message || 'Gagal memuat data kabupaten/kota');
+                }
+            } catch (error) {
+                console.error('Load regency error:', error);
+                ProvinceToast.error('Gagal menghubungi server');
+            }
+        },
+
         showEditForm(data) {
-            console.log('showEditForm called with data:', data);
             if (!data || !data.regency) {
                 ProvinceToast.error('Data kabupaten/kota tidak valid');
                 return;
@@ -72,21 +93,18 @@
             this.resetForm();
 
             // Populate form data
-            const regency = data.regency;
-            this.form.find('#regency-id').val(regency.id);
-            this.form.find('[name="name"]').val(regency.name);
-            this.form.find('[name="type"]').val(regency.type);
+            this.form.find('#regency-id').val(data.regency.id);
+            this.form.find('[name="name"]').val(data.regency.name);
+            this.form.find('[name="code"]').val(data.regency.code);
+            this.form.find('[name="type"]').val(data.regency.type);
 
             // Update modal title with regency name
-            this.modal.find('.modal-header h3')
-                .text(`Edit ${regency.type === 'kabupaten' ? 'Kabupaten' : 'Kota'}: ${regency.name}`);
+            this.modal.find('.modal-header h3').text(`Edit Kabupaten/Kota: ${data.regency.name}`);
 
             // Show modal with animation
-            this.modal
-                .addClass('regency-modal')
-                .fadeIn(300, () => {
-                    this.form.find('[name="name"]').focus();
-                });
+            this.modal.fadeIn(300, () => {
+                this.form.find('[name="name"]').focus();
+            });
         },
 
         hideModal() {
@@ -181,7 +199,8 @@
                 nonce: wilayahData.nonce,
                 id: id,
                 name: this.form.find('[name="name"]').val().trim(),
-                type: this.form.find('[name="type"]').val()
+                type: this.form.find('[name="type"]').val(),
+                code: this.form.find('[name="code"]').val().trim()
             };
 
             this.setLoadingState(true);
@@ -197,10 +216,10 @@
                     ProvinceToast.success('Kabupaten/kota berhasil diperbarui');
                     this.hideModal();
 
-                    // Trigger events for other components
+                    // Trigger events untuk refresh DataTable
                     $(document).trigger('regency:updated', [response.data]);
 
-                    // Refresh DataTable if exists
+                    // Refresh DataTable jika ada
                     if (window.RegencyDataTable) {
                         window.RegencyDataTable.refresh();
                     }

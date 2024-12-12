@@ -30,12 +30,8 @@
         provinceId: null,
 
         init() {
-            // Initialize modal and form elements
             this.modal = $('#create-regency-modal');
             this.form = $('#create-regency-form');
-
-            // Tambahkan ini untuk memastikan modal tersembunyi saat init
-            this.modal.hide();  // Atau .fadeOut(0)
 
             this.bindEvents();
             this.initializeValidation();
@@ -44,10 +40,18 @@
         bindEvents() {
             // Form events
             this.form.on('submit', (e) => this.handleCreate(e));
-
-            // Input validation events
             this.form.on('input', 'input[name="name"]', (e) => {
                 this.validateField(e.target);
+            });
+
+            // Add button handler
+            $('#add-regency-btn').on('click', () => {
+                const provinceId = window.Province?.currentId;
+                if (provinceId) {
+                    this.showModal(provinceId);
+                } else {
+                    ProvinceToast.error('Silakan pilih provinsi terlebih dahulu');
+                }
             });
 
             // Modal events
@@ -171,6 +175,7 @@
                 action: 'create_regency',
                 nonce: wilayahData.nonce,
                 province_id: this.provinceId,
+                code: this.form.find('[name="code"]').val().trim(), // Tambahkan ini
                 name: this.form.find('[name="name"]').val().trim(),
                 type: this.form.find('[name="type"]').val()
             };

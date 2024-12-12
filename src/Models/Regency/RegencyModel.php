@@ -41,13 +41,14 @@ class RegencyModel {
             $this->table,
             [
                 'province_id' => $data['province_id'],
+                'code' => $data['code'],
                 'name' => $data['name'],
                 'type' => $data['type'],
                 'created_by' => get_current_user_id(),
                 'created_at' => current_time('mysql'),
                 'updated_at' => current_time('mysql')
             ],
-            ['%d', '%s', '%s', '%d', '%s', '%s']
+            ['%d', '%s', '%s', '%s', '%d', '%s', '%s']
         );
 
         if ($result === false) {
@@ -75,6 +76,7 @@ class RegencyModel {
         $format = [];
 
         // Add format for each field
+        if (isset($data['code'])) $format[] = '%d';
         if (isset($data['name'])) $format[] = '%s';
         if (isset($data['type'])) $format[] = '%s';
         $format[] = '%s'; // for updated_at
@@ -98,6 +100,13 @@ class RegencyModel {
             ['id' => $id],
             ['%d']
         ) !== false;
+    }
+    public function existsByCode(string $code): bool {
+        global $wpdb;
+        return (bool) $wpdb->get_var($wpdb->prepare(
+            "SELECT EXISTS (SELECT 1 FROM {$this->table} WHERE code = %s) as result",
+            $code
+        ));
     }
 
     public function existsByNameInProvince(string $name, int $province_id, ?int $excludeId = null): bool {
@@ -134,9 +143,9 @@ class RegencyModel {
         }
 
         // Validate order column
-        $validColumns = ['name', 'type'];
+        $validColumns = ['code', 'name', 'type'];
         if (!in_array($orderColumn, $validColumns)) {
-            $orderColumn = 'name';
+            $orderColumn = 'code';
         }
 
         // Validate order direction

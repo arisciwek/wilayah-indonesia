@@ -56,6 +56,9 @@ class WilayahIndonesia {
         $this->loader->add_action('init', $menu_manager, 'init');
 
 		$this->initControllers(); // Tambahkan ini
+
+      // Add Regency Controller
+      new \WilayahIndonesia\Controllers\Regency\RegencyController();
 		}
 
 	private function initControllers() {

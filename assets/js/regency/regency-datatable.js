@@ -58,6 +58,19 @@
             this.bindEvents();
         },
 
+        bindEvents() {
+            // CRUD event listeners only
+            $(document)
+                .off('regency:created.datatable regency:updated.datatable regency:deleted.datatable')
+                .on('regency:created.datatable regency:updated.datatable regency:deleted.datatable',
+                    () => this.refresh());
+
+            // Reload button handler
+            this.$errorState.find('.reload-table').off('click').on('click', () => {
+                this.refresh();
+            });
+        },
+
         showLoading() {
             this.$tableContainer.hide();
             this.$emptyState.hide();
@@ -185,39 +198,30 @@
                         "previous": "Sebelumnya"
                     }
                 },
+                /*
                 drawCallback: (settings) => {
                     this.bindActionButtons();
                 },
+                */
+                  bindActionButtons() {
+                    // Ketika tombol edit diklik di DataTable
+                    $('#regency-table').on('click', '.edit-regency', function(e) {
+                        e.preventDefault();
+                        const id = $(this).data('id');
+                        if (window.EditRegencyForm) {
+                            window.EditRegencyForm.loadAndShowForm(id);
+                        } else {
+                            ProvinceToast.error('Edit form component not found');
+                        }
+                    });
+                },
+                
                 createdRow: (row, data) => {
                     $(row).attr('data-id', data.id);
                 }
             });
 
             this.initialized = true;
-        },
-
-        bindEvents() {
-            // CRUD event listeners
-            $(document)
-                .off('regency:created.datatable regency:updated.datatable regency:deleted.datatable')
-                .on('regency:created.datatable regency:updated.datatable regency:deleted.datatable',
-                    () => this.refresh());
-
-            // Add button handler
-            $('#add-regency-btn').off('click').on('click', () => {
-                if (window.CreateRegencyForm) {
-                    window.CreateRegencyForm.showModal(this.provinceId);
-                }
-            });
-
-            // Reload button handler
-            this.$errorState.find('.reload-table').off('click').on('click', () => {
-                this.refresh();
-            });
-
-            // Export handlers
-            $('.export-excel').off('click').on('click', () => this.exportData('excel'));
-            $('.export-pdf').off('click').on('click', () => this.exportData('pdf'));
         },
 
         async exportData(type) {

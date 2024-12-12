@@ -52,6 +52,16 @@ class RegencyValidator {
             $errors['province_id'] = __('Provinsi tidak valid.', 'wilayah-indonesia');
             return $errors;
         }
+        
+        // Code validation
+        $code = trim(sanitize_text_field($data['code'] ?? ''));
+        if (empty($code)) {
+            $errors['code'] = __('Kode kabupaten/kota wajib diisi.', 'wilayah-indonesia');
+        } elseif (!preg_match('/^\d{4}$/', $code)) {
+            $errors['code'] = __('Kode kabupaten/kota harus berupa 4 digit angka.', 'wilayah-indonesia');
+        } elseif ($this->regency_model->existsByCode($code)) {
+            $errors['code'] = __('Kode kabupaten/kota sudah ada.', 'wilayah-indonesia');
+        }
 
         // Name validation
         $name = trim(sanitize_text_field($data['name'] ?? ''));

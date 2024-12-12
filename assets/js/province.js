@@ -220,6 +220,13 @@
 
              $('.tab-content').removeClass('active');
              $(`#${tabId}`).addClass('active');
+             
+             // Inisialisasi DataTable regency saat tab aktif
+             if (tabId === 'regency-list' && this.currentId) {
+                 if (window.RegencyDataTable) {
+                     window.RegencyDataTable.init(this.currentId);
+                 }
+             }
          },
 
          closePanel() {

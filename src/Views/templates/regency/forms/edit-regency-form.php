@@ -39,6 +39,22 @@
 
             <div class="modal-content">
                 <div class="wi-form-group">
+                    <label for="edit-regency-code" class="required-field">
+                        <?php _e('Kode Kabupaten/Kota', 'wilayah-indonesia'); ?>
+                    </label>
+                    <input type="text"
+                           id="edit-regency-code"
+                           name="code"
+                           class="small-text"
+                           maxlength="4"
+                           pattern="\d{4}"
+                           required>
+                    <p class="description">
+                        <?php _e('Masukkan 4 digit angka', 'wilayah-indonesia'); ?>
+                    </p>
+                </div>
+                              
+                <div class="wi-form-group">
                     <label for="edit-regency-name" class="required-field">
                         <?php _e('Nama Kabupaten/Kota', 'wilayah-indonesia'); ?>
                     </label>

@@ -153,6 +153,7 @@ class RegencyController {
                 foreach ($result['data'] as $regency) {
                     $data[] = [
                         'id' => $regency->id,
+                        'code' => esc_html($regency->code),
                         'name' => esc_html($regency->name),
                         'type' => esc_html($regency->type),
                         'province_name' => esc_html($regency->province_name),
@@ -228,6 +229,7 @@ class RegencyController {
 
             $data = [
                 'province_id' => intval($_POST['province_id']),
+                'code' => sanitize_text_field($_POST['code']),
                 'name' => sanitize_text_field($_POST['name']),
                 'type' => sanitize_text_field($_POST['type']),
                 'created_by' => get_current_user_id()
@@ -292,6 +294,7 @@ class RegencyController {
 
             // Validate input
             $data = [
+                'code' => sanitize_text_field($_POST['code']),
                 'name' => sanitize_text_field($_POST['name']),
                 'type' => sanitize_text_field($_POST['type'])
             ];
