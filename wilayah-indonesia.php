@@ -55,10 +55,10 @@ class WilayahIndonesia {
         $menu_manager = new \WilayahIndonesia\Controllers\MenuManager($this->plugin_name, $this->version);
         $this->loader->add_action('init', $menu_manager, 'init');
 
-		$this->initControllers(); // Tambahkan ini
+		$this->initControllers(); 
 
-      // Add Regency Controller
       new \WilayahIndonesia\Controllers\Regency\RegencyController();
+      new \WilayahIndonesia\Controllers\DashboardController();
 		}
 
 	private function initControllers() {

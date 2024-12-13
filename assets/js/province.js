@@ -93,6 +93,8 @@
 
              this.bindEvents();
              this.handleInitialState();
+             this.loadDashboardStats();
+
          },
 
          bindEvents() {
@@ -220,7 +222,7 @@
 
              $('.tab-content').removeClass('active');
              $(`#${tabId}`).addClass('active');
-             
+
              // Inisialisasi DataTable regency saat tab aktif
              if (tabId === 'regency-list' && this.currentId) {
                  if (window.RegencyDataTable) {
@@ -274,7 +276,8 @@
              if (window.ProvinceDataTable) {
                  window.ProvinceDataTable.refresh();
              }
-         }
+         },
+
      };
 
      // Initialize when document is ready
@@ -282,5 +285,10 @@
          window.Province = Province;
          Province.init();
      });
+
+     // Refresh stats after CRUD operations
+     $(document).on('province:created province:deleted regency:created regency:deleted',
+         () => this.loadDashboardStats()
+     );
 
  })(jQuery);

@@ -104,24 +104,41 @@ class Wilayah_Indonesia_Dependencies {
             wp_enqueue_script('province-datatable', WILAYAH_INDONESIA_URL . 'assets/js/components/province-datatable.js', ['jquery', 'datatables', 'province-toast'], $this->version, true);
             wp_enqueue_script('create-province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/create-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
             wp_enqueue_script('edit-province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/edit-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
-            wp_enqueue_script('province', WILAYAH_INDONESIA_URL . 'assets/js/province.js', [
-                'jquery',
-                'province-toast',
-                'province-datatable',
-                'create-province-form',
-                'edit-province-form'
-            ], $this->version, true);
+            
+            wp_enqueue_script('wilayah-dashboard',
+                WILAYAH_INDONESIA_URL . 'assets/js/dashboard.js',
+                ['jquery'],
+                $this->version,
+                true
+            );
+
+            wp_enqueue_script('province',
+                WILAYAH_INDONESIA_URL . 'assets/js/province.js',
+                [
+                    'jquery',
+                    'province-toast',
+                    'province-datatable',
+                    'create-province-form',
+                    'edit-province-form',
+                    'wilayah-dashboard' // Tambahkan dependency
+                ],
+                $this->version,
+                true
+            );
 
             // Regency scripts
             wp_enqueue_script('regency-datatable', WILAYAH_INDONESIA_URL . 'assets/js/regency/regency-datatable.js', ['jquery', 'datatables', 'province-toast', 'province'], $this->version, true);
-            wp_enqueue_script('create-regency-form', WILAYAH_INDONESIA_URL . 'assets/js/regency/create-regency-form.js', ['jquery', 'jquery-validate', 'province-toast', 'regency-datatable'], $this->version, true);
-            wp_enqueue_script('edit-regency-form', WILAYAH_INDONESIA_URL . 'assets/js/regency/edit-regency-form.js', ['jquery', 'jquery-validate', 'province-toast', 'regency-datatable'], $this->version, true);
-
+            wp_enqueue_script('regency-toast', WILAYAH_INDONESIA_URL . 'assets/js/regency/regency-toast.js', ['jquery'], $this->version, true);
+            // Update dependencies untuk form
+            wp_enqueue_script('create-regency-form', WILAYAH_INDONESIA_URL . 'assets/js/regency/create-regency-form.js', ['jquery', 'jquery-validate', 'regency-toast', 'regency-datatable'], $this->version, true);
+            wp_enqueue_script('edit-regency-form', WILAYAH_INDONESIA_URL . 'assets/js/regency/edit-regency-form.js', ['jquery', 'jquery-validate', 'regency-toast', 'regency-datatable'], $this->version, true);
             // Localize script
             wp_localize_script('province', 'wilayahData', [
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('wilayah_nonce')
             ]);
+
+
         }
     }
 }

@@ -182,4 +182,9 @@ class RegencyModel {
             'filtered' => (int) $filtered
         ];
     }
+
+    public function getTotalCount(): int {
+        global $wpdb;
+        return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table}");
+    }
 }

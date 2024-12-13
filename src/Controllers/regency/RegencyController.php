@@ -294,7 +294,6 @@ class RegencyController {
 
             // Validate input
             $data = [
-                'code' => sanitize_text_field($_POST['code']),
                 'name' => sanitize_text_field($_POST['name']),
                 'type' => sanitize_text_field($_POST['type'])
             ];
