@@ -206,23 +206,6 @@
              }, 500);
          }
      },
-
-     // Pre-defined messages
-     showCreated() {
-         this.success('Provinsi berhasil ditambahkan');
-     },
-
-     showUpdated() {
-         this.success('Provinsi berhasil diperbarui');
-     },
-
-     showDeleted() {
-         this.success('Provinsi berhasil dihapus');
-     },
-
-     showServerError() {
-         this.error('Terjadi kesalahan saat menghubungi server. Silakan coba lagi.');
-     }
  };
 
  // Expose for global use

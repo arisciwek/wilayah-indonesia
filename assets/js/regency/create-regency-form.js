@@ -16,7 +16,7 @@
  * Dependencies:
  * - jQuery
  * - jQuery Validation
- * - ProvinceToast for notifications
+ * - RegencyToast for notifications
  * - WIModal for confirmations
  *
  * Last modified: 2024-12-10
@@ -50,7 +50,7 @@
                 if (provinceId) {
                     this.showModal(provinceId);
                 } else {
-                    ProvinceToast.error('Silakan pilih provinsi terlebih dahulu');
+                    RegencyToast.error('Silakan pilih provinsi terlebih dahulu');
                 }
             });
 
@@ -68,7 +68,7 @@
 
         showModal(provinceId) {
             if (!provinceId) {
-                ProvinceToast.error('ID Provinsi tidak valid');
+                RegencyToast.error('ID Provinsi tidak valid');
                 return;
             }
 
@@ -190,7 +190,7 @@
                 });
 
                 if (response.success) {
-                    ProvinceToast.success('Kabupaten/kota berhasil ditambahkan');
+                    RegencyToast.success('Kabupaten/kota berhasil ditambahkan');
                     this.hideModal();
 
                     $(document).trigger('regency:created', [response.data]);
@@ -199,11 +199,11 @@
                         window.RegencyDataTable.refresh();
                     }
                 } else {
-                    ProvinceToast.error(response.data?.message || 'Gagal menambah kabupaten/kota');
+                    RegencyToast.error(response.data?.message || 'Gagal menambah kabupaten/kota');
                 }
             } catch (error) {
                 console.error('Create regency error:', error);
-                ProvinceToast.error('Gagal menghubungi server. Silakan coba lagi.');
+                RegencyToast.error('Gagal menghubungi server. Silakan coba lagi.');
             } finally {
                 this.setLoadingState(false);
             }

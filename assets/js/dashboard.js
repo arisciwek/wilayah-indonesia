@@ -73,6 +73,11 @@
             });
         },
 
+        // Tambahkan alias untuk loadStats agar kompatibel
+        refreshStats() {
+            this.loadStats();
+        },
+
         updateStats(totalProvinces, totalRegencies) {
             if (typeof totalProvinces === 'number') {
                 this.components.stats.totalProvinces

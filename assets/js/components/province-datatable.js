@@ -143,7 +143,7 @@
                 },
                 drawCallback: (settings) => {
                     this.bindActionButtons();
-                    this.updateDashboardStats(settings.json);
+                    this.updateDashboardStats(settings);
 
                     // Get current hash if any
                     const hash = window.location.hash;
@@ -230,6 +230,7 @@
                  ProvinceToast.error('Gagal menghubungi server');
              }
          },
+
          async handleDelete(id) {
              if (!id) return;
 
@@ -255,7 +256,7 @@
                          });
 
                          if (response.success) {
-                             ProvinceToast.success('Provinsi berhasil dihapus');
+                             ProvinceToast.success(response.data.message);
 
                              // Clear hash if deleted province is currently viewed
                              if (window.location.hash === `#${id}`) {
@@ -320,11 +321,14 @@
              }
          },
 
-         updateDashboardStats(json) {
-             if (json && typeof json.recordsTotal === 'number') {
-                 if (window.Province) {
-                     window.Province.updateStats(json.recordsTotal, json.totalRegencies);
-                 }
+         // Di dalam ProvinceDataTable object
+         updateDashboardStats(settings) {
+             // Trigger event yang didengarkan oleh Dashboard
+             $(document).trigger('datatable:loaded', [settings]);
+
+             // Atau bisa langsung memanggil Dashboard jika tersedia
+             if (window.Dashboard) {
+                 window.Dashboard.updateStats(settings._iRecordsTotal, null);
              }
          }
      };

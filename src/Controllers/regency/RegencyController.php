@@ -238,7 +238,6 @@ class RegencyController {
             // Validate input
             $errors = $this->validator->validateCreate($data);
             if (!empty($errors)) {
-                $this->debug_log('Validation errors found: ' . print_r($errors, true));
                 wp_send_json_error([
                     'message' => is_array($errors) ? implode(', ', $errors) : $errors,
                     'errors' => $errors
@@ -376,7 +375,7 @@ class RegencyController {
             }
 
             wp_send_json_success([
-                'message' => __('Regency deleted successfully', 'wilayah-indonesia')
+                'message' => __('Data Kabupaten / kota berhasil dihapus', 'wilayah-indonesia')
             ]);
 
         } catch (\Exception $e) {

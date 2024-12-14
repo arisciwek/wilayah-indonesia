@@ -32,55 +32,23 @@
  *
  * Last modified: 2024-12-03 16:45:00
  */
-/**
- * Province Management Interface
- *
- * @package     Wilayah_Indonesia
- * @subpackage  Assets/JS
- * @version     1.0.0
- * @author      arisciwek
- *
- * Path: /wilayah-indonesia/assets/js/province.js
- *
- * Description: Main JavaScript handler untuk UI provinsi.
- *              Fokus ke manajemen panel dan UI interactions.
- *              Tidak menangani operasi data (CRUD).
- *
- * Dependencies:
- * - jQuery
- * - ProvinceDataTable
- * - ProvinceForm
- * - ProvinceToast
- * - WordPress AJAX
- *
- * Changelog:
- * 1.0.0 - 2024-12-03
- * - Added proper jQuery no-conflict handling
- * - Added panel kanan integration
- * - Added CRUD event handlers
- * - Added toast notifications
- * - Improved error handling
- * - Added loading states
- *
- * Last modified: 2024-12-03 16:45:00
- */
- /**
-  * Province Management Interface
-  *
-  * @package     Wilayah_Indonesia
-  * @subpackage  Assets/JS
-  * @version     1.1.0
-  * @author      arisciwek
-  */
  (function($) {
      'use strict';
 
      const Province = {
          currentId: null,
-         components: {},
+         isLoading: false,
+         components: {
+             container: null,
+             rightPanel: null,
+             detailsPanel: null,
+             stats: {
+                 totalProvinces: null,
+                 totalRegencies: null
+             }
+         },
 
          init() {
-             // Store references to required components
              this.components = {
                  container: $('.wi-province-container'),
                  rightPanel: $('.wi-province-right-panel'),
@@ -93,39 +61,34 @@
 
              this.bindEvents();
              this.handleInitialState();
-             this.loadDashboardStats();
-
          },
 
          bindEvents() {
+             // Unbind existing events first to prevent duplicates
+             $(document)
+                 .off('.Province')
+                 .on('province:created.Province', (e, data) => this.handleCreated(data))
+                 .on('province:updated.Province', (e, data) => this.handleUpdated(data))
+                 .on('province:deleted.Province', () => this.handleDeleted())
+                 .on('province:display.Province', (e, data) => this.displayData(data))
+                 .on('province:loading.Province', () => this.showLoading())
+                 .on('province:loaded.Province', () => this.hideLoading());
+
              // Panel events
-             $('.wi-province-close-panel').on('click', () => this.closePanel());
+             $('.wi-province-close-panel').off('click').on('click', () => this.closePanel());
 
              // Panel navigation
-             $('.nav-tab').on('click', (e) => {
+             $('.nav-tab').off('click').on('click', (e) => {
                  e.preventDefault();
                  this.switchTab($(e.currentTarget).data('tab'));
              });
 
              // Window events
-             $(window).on('hashchange', () => this.handleHashChange());
-
-             // Province events
-             $(document).on('province:display', (e, data) => this.displayData(data));
-             $(document).on('province:loading', () => this.showLoading());
-             $(document).on('province:loaded', () => this.hideLoading());
-
-             // CRUD events
-             $(document).on('province:created', (e, data) => this.handleCreated(data));
-             $(document).on('province:updated', (e, data) => this.handleUpdated(data));
-             $(document).on('province:deleted', () => this.handleDeleted());
+             $(window).off('hashchange.Province').on('hashchange.Province', () => this.handleHashChange());
          },
 
          handleInitialState() {
              const hash = window.location.hash;
-
-             console.log('handleInitialState with hash:', window.location.hash);
-
              if (hash && hash.startsWith('#')) {
                  const id = hash.substring(1);
                  if (id && id !== this.currentId) {
@@ -143,21 +106,19 @@
 
              const id = hash.substring(1);
              if (id && id !== this.currentId) {
-
-                  // Reset ke tab details saat ganti provinsi
-                  $('.tab-content').removeClass('active');
-                  $('#province-details').addClass('active');
-                  $('.nav-tab').removeClass('nav-tab-active');
-                  $('.nav-tab[data-tab="province-details"]').addClass('nav-tab-active');
+                 $('.tab-content').removeClass('active');
+                 $('#province-details').addClass('active');
+                 $('.nav-tab').removeClass('nav-tab-active');
+                 $('.nav-tab[data-tab="province-details"]').addClass('nav-tab-active');
 
                  this.loadProvinceData(id);
              }
          },
 
          async loadProvinceData(id) {
-             console.log('Loading province data:', id);
-             if (!id) return;
+             if (!id || this.isLoading) return;
 
+             this.isLoading = true;
              this.showLoading();
 
              try {
@@ -179,19 +140,21 @@
                  }
              } catch (error) {
                  console.error('Load province error:', error);
-                 ProvinceToast.error('Gagal menghubungi server');
+                 if (this.isLoading) {
+                     ProvinceToast.error('Gagal menghubungi server');
+                 }
              } finally {
+                 this.isLoading = false;
                  this.hideLoading();
              }
          },
+
          displayData(data) {
-            console.log('Displaying province data:', data);
              if (!data || !data.province) {
                  ProvinceToast.error('Data provinsi tidak valid');
                  return;
              }
 
-             // Reset state saat menampilkan data baru
              $('.tab-content').removeClass('active');
              $('#province-details').addClass('active');
              $('.nav-tab').removeClass('nav-tab-active');
@@ -203,14 +166,12 @@
              const createdAt = new Date(data.province.created_at).toLocaleString('id-ID');
              const updatedAt = new Date(data.province.updated_at).toLocaleString('id-ID');
 
-             // Mengisi data ke elemen yang sudah ada
              $('#province-header-name').text(data.province.name);
              $('#province-name').text(data.province.name);
              $('#province-regency-count').text(data.regency_count);
              $('#province-created-at').text(createdAt);
              $('#province-updated-at').text(updatedAt);
 
-             // Highlight in DataTable if available
              if (window.ProvinceDataTable) {
                  window.ProvinceDataTable.highlightRow(data.province.id);
              }
@@ -223,7 +184,6 @@
              $('.tab-content').removeClass('active');
              $(`#${tabId}`).addClass('active');
 
-             // Inisialisasi DataTable regency saat tab aktif
              if (tabId === 'regency-list' && this.currentId) {
                  if (window.RegencyDataTable) {
                      window.RegencyDataTable.init(this.currentId);
@@ -247,19 +207,17 @@
              this.components.rightPanel.removeClass('loading');
          },
 
-         updateStats(totalProvinces, totalRegencies) {
-             if (typeof totalProvinces === 'number') {
-                 this.components.stats.totalProvinces.text(totalProvinces.toLocaleString('id-ID'));
-             }
-             if (typeof totalRegencies === 'number') {
-                 this.components.stats.totalRegencies.text(totalRegencies.toLocaleString('id-ID'));
-             }
-         },
-
-         // Event Handlers
          handleCreated(data) {
              if (data && data.id) {
-                 window.location.hash = data.id;
+                     window.location.hash = data.id;
+             }
+
+             if (window.ProvinceDataTable) {
+                 window.ProvinceDataTable.refresh();
+             }
+
+             if (window.Dashboard) {
+                 window.Dashboard.refreshStats();
              }
          },
 
@@ -276,8 +234,10 @@
              if (window.ProvinceDataTable) {
                  window.ProvinceDataTable.refresh();
              }
-         },
-
+             if (window.Dashboard) {
+                window.Dashboard.loadStats(); // Gunakan loadStats() langsung
+             }
+         }
      };
 
      // Initialize when document is ready
@@ -285,10 +245,5 @@
          window.Province = Province;
          Province.init();
      });
-
-     // Refresh stats after CRUD operations
-     $(document).on('province:created province:deleted regency:created regency:deleted',
-         () => this.loadDashboardStats()
-     );
 
  })(jQuery);

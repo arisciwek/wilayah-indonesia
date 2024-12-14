@@ -61,6 +61,8 @@ class Wilayah_Indonesia_Dependencies {
             // Core styles
             wp_enqueue_style('wilayah-toast', WILAYAH_INDONESIA_URL . 'assets/css/components/toast.css', [], $this->version);
             wp_enqueue_style('wilayah-modal', WILAYAH_INDONESIA_URL . 'assets/css/components/confirmation-modal.css', [], $this->version);
+            // Regency toast - terpisah
+            wp_enqueue_style('regency-toast', WILAYAH_INDONESIA_URL . 'assets/css/regency/regency-toast.css', [], $this->version);
 
             // DataTables
             wp_enqueue_style('datatables', 'https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css', [], '1.13.7');
@@ -99,12 +101,14 @@ class Wilayah_Indonesia_Dependencies {
             // Components
             wp_enqueue_script('province-toast', WILAYAH_INDONESIA_URL . 'assets/js/components/province-toast.js', ['jquery'], $this->version, true);
             wp_enqueue_script('confirmation-modal', WILAYAH_INDONESIA_URL . 'assets/js/components/confirmation-modal.js', ['jquery'], $this->version, true);
+            // Regency toast
+            wp_enqueue_script('regency-toast', WILAYAH_INDONESIA_URL . 'assets/js/regency/regency-toast.js', ['jquery'], $this->version, true);
 
             // Province scripts - path fixed according to tree.md
             wp_enqueue_script('province-datatable', WILAYAH_INDONESIA_URL . 'assets/js/components/province-datatable.js', ['jquery', 'datatables', 'province-toast'], $this->version, true);
             wp_enqueue_script('create-province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/create-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
             wp_enqueue_script('edit-province-form', WILAYAH_INDONESIA_URL . 'assets/js/components/edit-province-form.js', ['jquery', 'jquery-validate', 'province-toast'], $this->version, true);
-            
+
             wp_enqueue_script('wilayah-dashboard',
                 WILAYAH_INDONESIA_URL . 'assets/js/dashboard.js',
                 ['jquery'],
@@ -137,7 +141,6 @@ class Wilayah_Indonesia_Dependencies {
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('wilayah_nonce')
             ]);
-
 
         }
     }

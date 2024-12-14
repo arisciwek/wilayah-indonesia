@@ -241,7 +241,6 @@ class ProvinceController {
             // Validasi input
             $errors = $this->validator->validateCreate($data);
             if (!empty($errors)) {
-                error_log('Validation errors found: ' . print_r($errors, true));
                 wp_send_json_error([
                     'message' => is_array($errors) ? implode(', ', $errors) : $errors,
                     'errors' => $errors
@@ -258,9 +257,6 @@ class ProvinceController {
                 ]);
                 return;
             }
-
-            error_log('Province created with ID: ' . $id);
-
             // Get fresh data for response
             $province = $this->model->find($id);
             if (!$province) {
@@ -368,7 +364,6 @@ class ProvinceController {
         try {
             check_ajax_referer('wilayah_nonce', 'nonce');
 
-            // Ensure we have an ID and it's properly cast to integer
             $id = isset($_POST['id']) ? (int) $_POST['id'] : 0;
             if (!$id) {
                 throw new \Exception('Invalid province ID');
@@ -388,10 +383,13 @@ class ProvinceController {
             // Clear cache
             $this->cache->invalidateProvinceCache($id);
 
-            wp_send_json_success(['message' => 'Province deleted successfully']);
+            wp_send_json_success([
+                'message' => __('Data Provinsi berhasil dihapus', 'wilayah-indonesia')
+            ]);
 
         } catch (\Exception $e) {
             wp_send_json_error(['message' => $e->getMessage()]);
         }
     }
+
 }
