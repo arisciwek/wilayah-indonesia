@@ -144,4 +144,29 @@ class Wilayah_Indonesia_Dependencies {
 
         }
     }
+
+    public function enqueue_select_handler() {
+        // Cek apakah sudah di-enqueue sebelumnya
+        if (wp_script_is('wilayah-select-handler', 'enqueued')) {
+            return;
+        }
+
+        wp_enqueue_script('wilayah-select-handler', 
+            WILAYAH_INDONESIA_URL . 'assets/js/components/select-handler.js', 
+            ['jquery'], 
+            $this->version, 
+            true
+        );
+
+        wp_localize_script('wilayah-select-handler', 'wilayahSelectData', [
+            'ajaxUrl' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('wilayah_nonce'),
+            'texts' => [
+                'select_province' => __('Pilih Provinsi', 'wilayah-indonesia'),
+                'select_regency' => __('Pilih Kabupaten/Kota', 'wilayah-indonesia'),
+                'loading' => __('Memuat...', 'wilayah-indonesia')
+            ]
+        ]);
+    }
+
 }

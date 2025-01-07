@@ -11,7 +11,7 @@
 
 namespace WilayahIndonesia\Controllers;
 
-use WilayahIndonesia\Controllers\Settings\SettingsController;
+use WilayahIndonesia\Controllers\SettingsController;
 
 class MenuManager {
     private $plugin_name;
