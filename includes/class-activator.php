@@ -33,6 +33,7 @@
 
 use WilayahIndonesia\Models\Settings\PermissionModel;
 use WilayahIndonesia\Database\Installer;
+use WilayahIndonesia\Database\DemoData;
 
 class Wilayah_Indonesia_Activator {
     private static function debug($message, $data = null) {
@@ -55,7 +56,13 @@ class Wilayah_Indonesia_Activator {
                 return;
             }
 
-            // 2. Add capabilities
+            // 2. Load demo data (selama development)
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                self::debug('Loading demo data...');
+                DemoData::load();
+            }
+
+            // 3. Add capabilities
             self::debug('Adding capabilities...');
             try {
                 $permission_model = new PermissionModel();
@@ -65,11 +72,11 @@ class Wilayah_Indonesia_Activator {
                 self::debug('Error adding capabilities: ' . $e->getMessage());
             }
 
-            // 3. Add version
+            // 4. Add version
             self::debug('Adding version...');
             self::addVersion();
 
-            // 4. Flush rewrite rules jika diperlukan
+            // 5. Flush rewrite rules jika diperlukan
             flush_rewrite_rules();
 
             self::debug('Plugin activation completed successfully');
