@@ -58,7 +58,7 @@ class WilayahIndonesia {
         // Register autoloader first
         spl_autoload_register(function ($class) {
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Autoloader attempting to load: " . $class);
+                //error_log("Autoloader attempting to load: " . $class);
             }
 
             $prefix = 'WilayahIndonesia\\';
@@ -73,14 +73,14 @@ class WilayahIndonesia {
             $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
             
             if (defined('WP_DEBUG') && WP_DEBUG) {
-                error_log("Looking for file: " . $file);
-                error_log("File exists: " . (file_exists($file) ? 'yes' : 'no'));
+                //error_log("Looking for file: " . $file);
+                //error_log("File exists: " . (file_exists($file) ? 'yes' : 'no'));
             }
 
             if (file_exists($file)) {
                 require $file;
                 if (defined('WP_DEBUG') && WP_DEBUG) {
-                    error_log("Successfully loaded: " . $file);
+                    //error_log("Successfully loaded: " . $file);
                     return true;
                 }
             }
