@@ -11,11 +11,13 @@ A comprehensive WordPress plugin for managing Indonesian administrative regions 
 - Intelligent caching system for optimized performance
 - Advanced form validation and error handling
 - Toast notifications for user feedback
+- Reusable select lists for provinces and regencies
 
 ### Dashboard Features
 - Interactive statistics display
 - Province and regency count tracking
 - Real-time updates on data changes
+- Visual data representation
 
 ### User Interface
 - Modern, responsive design following WordPress admin UI patterns
@@ -23,6 +25,7 @@ A comprehensive WordPress plugin for managing Indonesian administrative regions 
 - Dynamic loading states and error handling
 - Custom modal dialogs for data entry
 - Toast notifications system
+- Interactive select lists with dynamic updates
 
 ### Data Management
 - Automatic code generation for provinces and regencies
@@ -30,6 +33,7 @@ A comprehensive WordPress plugin for managing Indonesian administrative regions 
 - Relationship management between provinces and regencies
 - Bulk operations support
 - Export capabilities (optional feature)
+- Integrated caching system for optimal performance
 
 ### Security Features
 - Role-based access control (RBAC)
@@ -37,12 +41,14 @@ A comprehensive WordPress plugin for managing Indonesian administrative regions 
 - Input sanitization and validation
 - XSS prevention
 - SQL injection protection
+- Secure AJAX handling
 
 ### Developer Features
 - Event-driven architecture for extensibility
 - Comprehensive logging system
 - Cache management utilities
 - Clean, documented code structure
+- Reusable components and hooks
 
 ## 📋 Requirements
 
@@ -92,10 +98,13 @@ A comprehensive WordPress plugin for managing Indonesian administrative regions 
 - Logging configuration
 - Export options
 - API access (if enabled)
+- Cache control options
 
 ## 🎯 Usage
 
-### Province Management
+### Basic Usage
+
+#### Province Management
 1. Navigate to 'Wilayah Indonesia' menu
 2. Use the left panel for province listing
 3. Utilize action buttons for:
@@ -104,13 +113,26 @@ A comprehensive WordPress plugin for managing Indonesian administrative regions 
    - 🗑️ Delete entries
 4. Right panel shows detailed information
 
-### Regency Management
+#### Regency Management
 1. Select a province to view its regencies
 2. Use the regency tab in the right panel
 3. Manage regencies with similar actions:
    - Add new regencies
    - Edit existing ones
    - Delete as needed
+
+### Select List Integration
+
+For detailed documentation on implementing select lists in your projects, refer to:
+`docs/penggunaan-select-list-wilayah-indonesia.md`
+
+Key features include:
+- Dynamic province and regency select lists
+- Automatic data loading
+- Caching integration
+- Event handling
+- Error management
+- Custom styling options
 
 ## 🛠 Development
 
@@ -120,6 +142,7 @@ wilayah-indonesia/
 ├── assets/              # Frontend resources
 │   ├── css/            # Stylesheets
 │   └── js/             # JavaScript files
+├── docs/               # Documentation files
 ├── includes/           # Core plugin files
 ├── src/                # Main source code
 │   ├── Cache/          # Caching system
@@ -150,6 +173,7 @@ wilayah-indonesia/
 - DataTables integration
 - Form validation
 - Toast notifications
+- Select list handlers
 
 ### Development Guidelines
 
@@ -193,7 +217,15 @@ wilayah-indonesia/
 
 ## 📝 Changelog
 
-### Version 1.0.0
+### Version 1.1.0 (2024-01-21)
+- Added improved cache integration
+- Added proper error handling
+- Fixed missing methods
+- Updated documentation
+- Enhanced select list functionality
+- Improved data validation
+
+### Version 1.0.0 (2024-01-06)
 - Initial release with core functionality
 - Province and regency management
 - Permission system implementation
@@ -224,10 +256,16 @@ Distributed under the GPL v2 or later License. See `LICENSE` for details.
 - DataTables library
 - WordPress Core
 
+## 📚 Documentation
+
+Complete documentation is available in the `docs/` directory:
+- `penggunaan-select-list-wilayah-indonesia.md`: Guide for implementing select lists
+- Additional documentation will be added in future releases
+
 ## 📞 Support
 
 For support:
-1. Check the documentation
+1. Check the documentation in `docs/` directory
 2. Submit issues via GitHub
 3. Contact the development team
 
