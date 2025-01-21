@@ -15,12 +15,26 @@
 defined('ABSPATH') || exit;
 define('WILAYAH_INDONESIA_VERSION', '1.0.0');
 
+// Di luar class WilayahIndonesia
+if (!function_exists('wilayah_indonesia_plugin_url')) {
+    function wilayah_indonesia_plugin_url() {
+        return WILAYAH_INDONESIA_URL;
+    }
+}
+
+if (!function_exists('wilayah_indonesia_is_active')) {
+    function wilayah_indonesia_is_active() {
+        return class_exists('WilayahIndonesia');
+    }
+}
+
 class WilayahIndonesia {
     private static $instance = null;
     private $loader;
     private $plugin_name;
     private $version;
     private $province_controller;
+    private $select_list_hooks; // Tambahkan ini
 
     public static function getInstance() {
         if (null === self::$instance) {
@@ -40,6 +54,38 @@ class WilayahIndonesia {
         $this->version = WILAYAH_INDONESIA_VERSION;
 
         $this->defineConstants();
+        
+        // Register autoloader first
+        spl_autoload_register(function ($class) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Autoloader attempting to load: " . $class);
+            }
+
+            $prefix = 'WilayahIndonesia\\';
+            $base_dir = plugin_dir_path(__FILE__) . 'src/';
+            
+            $len = strlen($prefix);
+            if (strncmp($prefix, $class, $len) !== 0) {
+                return;
+            }
+            
+            $relative_class = substr($class, $len);
+            $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+            
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log("Looking for file: " . $file);
+                error_log("File exists: " . (file_exists($file) ? 'yes' : 'no'));
+            }
+
+            if (file_exists($file)) {
+                require $file;
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log("Successfully loaded: " . $file);
+                    return true;
+                }
+            }
+        });
+        
         $this->includeDependencies();
         $this->initHooks();
     }
@@ -58,6 +104,9 @@ class WilayahIndonesia {
         // Inisialisasi menu
         $menu_manager = new \WilayahIndonesia\Controllers\MenuManager($this->plugin_name, $this->version);
         $this->loader->add_action('init', $menu_manager, 'init');
+
+        // Inisialisasi SelectListHooks
+        $this->select_list_hooks = new \WilayahIndonesia\Hooks\SelectListHooks();
 
         $this->initControllers(); 
 
@@ -82,45 +131,7 @@ class WilayahIndonesia {
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-activator.php';
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-deactivator.php';
         require_once WILAYAH_INDONESIA_PATH . 'includes/class-dependencies.php'; // Tambahkan ini
-
-        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/SettingsController.php';
-        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/MenuManager.php';
-
-        require_once WILAYAH_INDONESIA_PATH . 'src/Models/Settings/SettingsModel.php';
-        require_once WILAYAH_INDONESIA_PATH . 'src/Models/Settings/PermissionModel.php';
-
-        new \WilayahIndonesia\Controllers\SettingsController();
-
-        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/ProvinceController.php';
-        require_once WILAYAH_INDONESIA_PATH . 'src/Models/ProvinceModel.php';
-
-        require_once WILAYAH_INDONESIA_PATH . 'src/Validators/ProvinceValidator.php';
-        require_once WILAYAH_INDONESIA_PATH . 'src/Cache/CacheManager.php';
-
-        require_once WILAYAH_INDONESIA_PATH . 'src/Views/components/confirmation-modal.php';
-
-        // Regency Related
-        require_once WILAYAH_INDONESIA_PATH . 'src/Controllers/regency/RegencyController.php';
-        require_once WILAYAH_INDONESIA_PATH . 'src/Models/Regency/RegencyModel.php';
-        require_once WILAYAH_INDONESIA_PATH . 'src/Validators/Regency/RegencyValidator.php';
-
         $this->loader = new Wilayah_Indonesia_Loader();
-
-        // Add autoloader
-        spl_autoload_register(function ($class) {
-            $prefix = 'WilayahIndonesia\\';
-            $base_dir = __DIR__ . '/src/';
-            $len = strlen($prefix);
-            if (strncmp($prefix, $class, $len) !== 0) {
-                return;
-            }
-            $relative_class = substr($class, $len);
-            $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
-
-            if (file_exists($file)) {
-                require $file;
-            }
-        });
     }
 
     public function run() {

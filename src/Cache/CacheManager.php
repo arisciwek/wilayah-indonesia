@@ -4,7 +4,7 @@
  *
  * @package     Wilayah_Indonesia
  * @subpackage  Cache
- * @version     1.0.0 
+ * @version     1.1.0 
  * @author      arisciwek
  *
  * Path: /wilayah-indonesia/src/Cache/CacheManager.php
@@ -19,6 +19,25 @@ class CacheManager {
     // Cache keys
     private const KEY_PROVINCE = 'province_';
     private const KEY_PROVINCE_LIST = 'province_list';
+    private const KEY_REGENCY = 'regency_';
+    private const KEY_REGENCY_LIST = 'regency_list_';
+
+    public function get(string $key) {
+        return wp_cache_get($key, self::CACHE_GROUP);
+    }
+
+    public function set(string $key, $data, int $expiry = null): bool {
+        return wp_cache_set(
+            $key,
+            $data,
+            self::CACHE_GROUP,
+            $expiry ?? self::CACHE_EXPIRY
+        );
+    }
+
+    public function delete(string $key): bool {
+        return wp_cache_delete($key, self::CACHE_GROUP);
+    }
 
     public function getProvince(int $id): ?object {
         return wp_cache_get(self::KEY_PROVINCE . $id, self::CACHE_GROUP);
@@ -49,5 +68,36 @@ class CacheManager {
             self::CACHE_GROUP,
             self::CACHE_EXPIRY
         );
+    }
+
+    public function getRegency(int $id): ?object {
+        return wp_cache_get(self::KEY_REGENCY . $id, self::CACHE_GROUP);
+    }
+
+    public function setRegency(int $id, object $data): bool {
+        return wp_cache_set(
+            self::KEY_REGENCY . $id,
+            $data,
+            self::CACHE_GROUP,
+            self::CACHE_EXPIRY
+        );
+    }
+
+    public function getRegencyList(int $province_id): ?array {
+        return wp_cache_get(self::KEY_REGENCY_LIST . $province_id, self::CACHE_GROUP);
+    }
+
+    public function setRegencyList(int $province_id, array $data): bool {
+        return wp_cache_set(
+            self::KEY_REGENCY_LIST . $province_id,
+            $data,
+            self::CACHE_GROUP,
+            self::CACHE_EXPIRY
+        );
+    }
+
+    public function invalidateRegencyCache(int $id, int $province_id): void {
+        wp_cache_delete(self::KEY_REGENCY . $id, self::CACHE_GROUP);
+        wp_cache_delete(self::KEY_REGENCY_LIST . $province_id, self::CACHE_GROUP);
     }
 }

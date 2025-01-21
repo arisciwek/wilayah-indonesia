@@ -28,24 +28,23 @@
 * - Added select rendering actions
 * - Added cache integration
 */
-
-
 namespace WilayahIndonesia\Hooks;
 
 use WilayahIndonesia\Models\ProvinceModel;
 use WilayahIndonesia\Models\Regency\RegencyModel;
-use WilayahIndonesia\Cache\WilayahCache;
+use WilayahIndonesia\Cache\CacheManager;
 
 class SelectListHooks {
     private $province_model;
     private $regency_model;
     private $cache;
     private $debug_mode;
+    private $select_list_hooks; // Tambahkan ini
 
     public function __construct() {
         $this->province_model = new ProvinceModel();
         $this->regency_model = new RegencyModel();
-        $this->cache = new WilayahCache();
+        $this->cache = new CacheManager();  // Dan ini
         $this->debug_mode = apply_filters('wilayah_indonesia_debug_mode', false);
         
         $this->registerHooks();
@@ -65,6 +64,73 @@ class SelectListHooks {
         add_action('wp_ajax_nopriv_get_regency_options', [$this, 'handleAjaxRegencyOptions']);
     }
 
+
+    private function renderSelect(array $attributes, array $options, ?int $selected_id): void {
+        $attributes['class'] = isset($attributes['class']) ? 
+            $attributes['class'] . ' regular-text' : 
+            'regular-text';
+        ?>
+        <select <?php echo $this->buildAttributes($attributes); ?>>
+            <?php foreach ($options as $value => $label): ?>
+                <option value="<?php echo esc_attr($value); ?>" 
+                    <?php selected($selected_id, $value); ?>>
+                    <?php echo esc_html($label); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <?php
+        // Add loading indicator for regency select
+        if (strpos($attributes['class'], 'wilayah-regency-select') !== false): ?>
+            <span class="wilayah-loading" style="display: none;">
+                <?php echo esc_html($attributes['data-loading-text'] ?? __('Memuat...', 'wilayah-indonesia')); ?>
+            </span>
+        <?php endif;
+    }
+
+    public function handleAjaxRegencyOptions(): void {
+        try {
+            if (!check_ajax_referer('wilayah_select_nonce', 'nonce', false)) {
+                throw new \Exception('Invalid security token');
+            }
+
+            $province_id = isset($_POST['province_id']) ? absint($_POST['province_id']) : 0;
+            if (!$province_id) {
+                throw new \Exception('Invalid province ID');
+            }
+
+            $options = $this->getRegencyOptions([], $province_id);
+            $html = $this->generateOptionsHtml($options);
+
+            wp_send_json_success([
+                'html' => $html,
+                'count' => count($options) - 1 // Kurangi 1 untuk pilihan default
+            ]);
+
+        } catch (\Exception $e) {
+            $this->logError('AJAX Error: ' . $e->getMessage());
+            wp_send_json_error([
+                'message' => __('Gagal memuat data kabupaten/kota', 'wilayah-indonesia'),
+                'details' => WP_DEBUG ? $e->getMessage() : null
+            ]);
+        }
+    }
+
+    private function generateOptionsHtml(array $options): string {
+        $html = '';
+        foreach ($options as $value => $label) {
+            // Skip empty value for regency (already added by select element)
+            if ($value === '' && $label === __('Pilih Kabupaten/Kota', 'wilayah-indonesia')) {
+                continue;
+            }
+            $html .= sprintf(
+                '<option value="%s">%s</option>',
+                esc_attr($value),
+                esc_html($label)
+            );
+        }
+        return $html;
+    }
+
     /**
      * Get province options with caching
      */
@@ -73,7 +139,8 @@ class SelectListHooks {
             $cache_key = 'province_options_' . md5(serialize($default_options) . $include_empty);
             
             // Try to get from cache first
-            $options = $this->cache->get($cache_key);
+            $options = wp_cache_get($cache_key, 'wilayah_indonesia');
+
             if (false !== $options) {
                 $this->debugLog('Retrieved province options from cache');
                 return $options;
@@ -91,7 +158,7 @@ class SelectListHooks {
             }
 
             // Cache the results
-            $this->cache->set($cache_key, $options);
+            wp_cache_set($cache_key, $options, 'wilayah_indonesia', 12 * HOUR_IN_SECONDS);
             $this->debugLog('Cached new province options');
 
             return $options;
@@ -125,9 +192,20 @@ class SelectListHooks {
             }
 
             if ($province_id) {
-                $regencies = $this->regency_model->getByProvince($province_id);
-                foreach ($regencies as $regency) {
-                    $options[$regency->id] = esc_html($regency->name);
+                // Menggunakan getDataTableData yang sudah ada
+                $result = $this->regency_model->getDataTableData(
+                    $province_id,  // province_id
+                    0,            // start dari awal
+                    1000,         // limit besar untuk ambil semua
+                    '',           // tanpa search
+                    'name',       // order by name
+                    'asc'         // ascending order
+                );
+
+                if (isset($result['data']) && is_array($result['data'])) {
+                    foreach ($result['data'] as $regency) {
+                        $options[$regency->id] = esc_html($regency->name);
+                    }
                 }
 
                 // Cache the results
@@ -185,64 +263,6 @@ class SelectListHooks {
             $this->logError('Error rendering regency select: ' . $e->getMessage());
             echo '<p class="error">' . esc_html__('Error loading regency selection', 'wilayah-indonesia') . '</p>';
         }
-    }
-
-    /**
-     * Handle AJAX request for regency options
-     */
-    public function handleAjaxRegencyOptions(): void {
-        try {
-            if (!check_ajax_referer('wilayah_select_nonce', 'nonce', false)) {
-                throw new \Exception('Invalid security token');
-            }
-
-            $province_id = isset($_POST['province_id']) ? absint($_POST['province_id']) : 0;
-            if (!$province_id) {
-                throw new \Exception('Invalid province ID');
-            }
-
-            $options = $this->getRegencyOptions([], $province_id);
-            $html = $this->generateOptionsHtml($options);
-
-            wp_send_json_success(['html' => $html]);
-
-        } catch (\Exception $e) {
-            $this->logError('AJAX Error: ' . $e->getMessage());
-            wp_send_json_error([
-                'message' => __('Gagal memuat data kabupaten/kota', 'wilayah-indonesia')
-            ]);
-        }
-    }
-
-    /**
-     * Helper method to render select element
-     */
-    private function renderSelect(array $attributes, array $options, ?int $selected_id): void {
-        ?>
-        <select <?php echo $this->buildAttributes($attributes); ?>>
-            <?php foreach ($options as $value => $label): ?>
-                <option value="<?php echo esc_attr($value); ?>" 
-                    <?php selected($selected_id, $value); ?>>
-                    <?php echo esc_html($label); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
-        <?php
-    }
-
-    /**
-     * Generate HTML for select options
-     */
-    private function generateOptionsHtml(array $options): string {
-        $html = '';
-        foreach ($options as $value => $label) {
-            $html .= sprintf(
-                '<option value="%s">%s</option>',
-                esc_attr($value),
-                esc_html($label)
-            );
-        }
-        return $html;
     }
 
     /**

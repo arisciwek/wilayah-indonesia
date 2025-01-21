@@ -215,4 +215,60 @@
         return (int) $wpdb->get_var("SELECT COUNT(*) FROM {$this->table}");
     }
     
+    public function getAllProvinces(): array {
+    global $wpdb;
+    
+    try {
+        // Check cache first
+        $cache_key = 'all_provinces_list';
+        $provinces = wp_cache_get($cache_key, 'wilayah_indonesia');
+        
+        if (false !== $provinces) {
+            return $provinces;
+        }
+
+        // If not in cache, fetch from database
+        $sql = "SELECT p.*, COUNT(r.id) as regency_count 
+                FROM {$this->table} p
+                LEFT JOIN {$this->regency_table} r ON p.id = r.province_id
+                GROUP BY p.id
+                ORDER BY p.name ASC";
+                
+        $results = $wpdb->get_results($sql);
+        
+        if ($results === null) {
+            throw new \Exception($wpdb->last_error);
+        }
+        
+        // Format results
+        $provinces = array_map(function($province) {
+            // Ensure regency_count is integer
+            $province->regency_count = (int) $province->regency_count;
+            
+            // Ensure created_by and updated_by are integers
+            if (isset($province->created_by)) {
+                $province->created_by = (int) $province->created_by;
+            }
+            if (isset($province->updated_by)) {
+                $province->updated_by = (int) $province->updated_by;
+            }
+            
+            return $province;
+        }, $results);
+        
+        // Cache the results
+        wp_cache_set($cache_key, $provinces, 'wilayah_indonesia', 12 * HOUR_IN_SECONDS);
+        
+        return $provinces;
+        
+    } catch (\Exception $e) {
+        // Log error if debug mode is on
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('ProvinceModel::getAllProvinces error: ' . $e->getMessage());
+        }
+        
+        // Return empty array on error
+        return [];
+    }
+}
  }
