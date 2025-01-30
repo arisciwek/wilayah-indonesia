@@ -35,12 +35,26 @@
  * - Basic styling
  * - Loading indicators
  */
-
 (function($) {
     'use strict';
 
     // Extend WilayahSelect with UI specific methods
-    $.extend(window.WilayahSelect, {
+    const WilayahSelectUI = {
+        /**
+         * Initialize UI components
+         */
+        initUI() {
+            // Prevent multiple UI initializations
+            if (this.uiInitialized) {
+                return;
+            }
+            
+            this.uiInitialized = true;
+            this.initializeStyles();
+            this.setupAccessibility();
+            this.debugLog('UI components initialized');
+        },
+
         /**
          * Handle errors
          */
@@ -60,17 +74,19 @@
          * Show error message
          */
         showErrorMessage(message) {
+            // Remove any existing error messages first
+            $('.wilayah-error').remove();
+
             if (typeof ProvinceToast !== 'undefined') {
                 ProvinceToast.error(message);
             } else {
                 // Create and show error element if toast not available
                 const $error = $('<div>', {
                     class: 'wilayah-error',
-                    text: message
+                    text: message,
+                    role: 'alert', // Add ARIA role for accessibility
+                    'aria-live': 'polite'
                 });
-
-                // Remove existing error messages
-                $('.wilayah-error').remove();
 
                 // Add new error message after the regency select
                 $('.wilayah-regency-select').after($error);
@@ -92,9 +108,6 @@
             // Remove any existing error messages
             $('.wilayah-error').remove();
             
-            // Trigger change event for dependent elements
-            $regency.trigger('change');
-
             // Add success indicator
             this.showSuccessIndicator($regency);
         },
@@ -103,13 +116,15 @@
          * Show success indicator
          */
         showSuccessIndicator($element) {
+            // Remove any existing success indicators first
+            $('.wilayah-success').remove();
+
             const $success = $('<span>', {
                 class: 'wilayah-success',
-                html: '&#10004;' // Checkmark
+                html: '&#10004;', // Checkmark
+                role: 'status',
+                'aria-live': 'polite'
             });
-
-            // Remove existing indicators
-            $('.wilayah-success').remove();
 
             // Add success indicator
             $element.after($success);
@@ -121,6 +136,116 @@
         },
 
         /**
+         * Initialize and inject required styles
+         */
+        initializeStyles() {
+            // Remove any existing styles first
+            $('#wilayah-select-styles').remove();
+
+            const style = `
+                .wilayah-loading {
+                    margin-left: 8px;
+                    color: #666;
+                    display: inline-block;
+                    vertical-align: middle;
+                }
+                
+                select.wilayah-province-select,
+                select.wilayah-regency-select {
+                    min-width: 200px;
+                    padding: 6px 12px;
+                    border: 1px solid #ced4da;
+                    border-radius: 4px;
+                    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+                }
+                
+                select.wilayah-province-select:focus,
+                select.wilayah-regency-select:focus {
+                    border-color: #80bdff;
+                    outline: 0;
+                    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+                }
+                
+                select.loading {
+                    background-color: #f8f9fa;
+                    cursor: wait;
+                    opacity: 0.8;
+                }
+                
+                .wilayah-error {
+                    color: #dc3545;
+                    margin-top: 4px;
+                    font-size: 0.875em;
+                    padding: 4px 8px;
+                    background-color: #fff;
+                    border: 1px solid #dc3545;
+                    border-radius: 4px;
+                    display: inline-block;
+                }
+
+                .wilayah-success {
+                    color: #28a745;
+                    margin-left: 8px;
+                    display: inline-block;
+                    vertical-align: middle;
+                    animation: fadeInOut 2s ease-in-out;
+                }
+
+                @keyframes fadeInOut {
+                    0% { opacity: 0; }
+                    20% { opacity: 1; }
+                    80% { opacity: 1; }
+                    100% { opacity: 0; }
+                }
+
+                /* Hover effects */
+                select.wilayah-province-select:not(:disabled):hover,
+                select.wilayah-regency-select:not(:disabled):hover {
+                    border-color: #80bdff;
+                }
+
+                /* Disabled state */
+                select.wilayah-province-select:disabled,
+                select.wilayah-regency-select:disabled {
+                    background-color: #e9ecef;
+                    cursor: not-allowed;
+                }
+
+                /* Mobile responsive adjustments */
+                @media (max-width: 768px) {
+                    select.wilayah-province-select,
+                    select.wilayah-regency-select {
+                        width: 100%;
+                        max-width: none;
+                    }
+                    
+                    .wilayah-error {
+                        display: block;
+                        margin-top: 8px;
+                    }
+                }
+            `;
+
+            $('<style>', {
+                id: 'wilayah-select-styles',
+                text: style
+            }).appendTo('head');
+        },
+
+        /**
+         * Setup accessibility attributes
+         */
+        setupAccessibility() {
+            $('.wilayah-province-select, .wilayah-regency-select').each(function() {
+                const $select = $(this);
+                if (!$select.attr('aria-label')) {
+                    $select.attr('aria-label', $select.hasClass('wilayah-province-select') ? 
+                        'Pilih Provinsi' : 'Pilih Kabupaten/Kota');
+                }
+            });
+        },
+
+        /**
          * Debug logging
          */
         debugLog(...args) {
@@ -128,102 +253,14 @@
                 console.log('Wilayah Select Debug:', ...args);
             }
         }
-    });
+    };
 
-    // Add CSS styles
-    const style = `
-        .wilayah-loading {
-            margin-left: 8px;
-            color: #666;
-            display: inline-block;
-            vertical-align: middle;
-        }
-        
-        select.wilayah-province-select,
-        select.wilayah-regency-select {
-            min-width: 200px;
-            padding: 6px 12px;
-            border: 1px solid #ced4da;
-            border-radius: 4px;
-            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        }
-        
-        select.wilayah-province-select:focus,
-        select.wilayah-regency-select:focus {
-            border-color: #80bdff;
-            outline: 0;
-            box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
-        }
-        
-        select.loading {
-            background-color: #f8f9fa;
-            cursor: wait;
-            opacity: 0.8;
-        }
-        
-        .wilayah-error {
-            color: #dc3545;
-            margin-top: 4px;
-            font-size: 0.875em;
-            padding: 4px 8px;
-            background-color: #fff;
-            border: 1px solid #dc3545;
-            border-radius: 4px;
-            display: inline-block;
-        }
+    // Merge UI methods into main WilayahSelect object
+    $.extend(window.WilayahSelect, WilayahSelectUI);
 
-        .wilayah-success {
-            color: #28a745;
-            margin-left: 8px;
-            display: inline-block;
-            vertical-align: middle;
-            animation: fadeInOut 2s ease-in-out;
-        }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; }
-            20% { opacity: 1; }
-            80% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        /* Hover effects */
-        select.wilayah-province-select:not(:disabled):hover,
-        select.wilayah-regency-select:not(:disabled):hover {
-            border-color: #80bdff;
-        }
-
-        /* Disabled state */
-        select.wilayah-province-select:disabled,
-        select.wilayah-regency-select:disabled {
-            background-color: #e9ecef;
-            cursor: not-allowed;
-        }
-
-        /* Mobile responsive adjustments */
-        @media (max-width: 768px) {
-            select.wilayah-province-select,
-            select.wilayah-regency-select {
-                width: 100%;
-                max-width: none;
-            }
-            
-            .wilayah-error {
-                display: block;
-                margin-top: 8px;
-            }
-        }
-    `;
-
-    $('<style>').text(style).appendTo('head');
-
-    // Add accessibility attributes
-    $('.wilayah-province-select, .wilayah-regency-select').each(function() {
-        const $select = $(this);
-        if (!$select.attr('aria-label')) {
-            $select.attr('aria-label', $select.hasClass('wilayah-province-select') ? 
-                'Pilih Provinsi' : 'Pilih Kabupaten/Kota');
-        }
+    // Initialize UI components after core initialization
+    $(document).on('wilayah:initialized', () => {
+        window.WilayahSelect.initUI();
     });
 
 })(jQuery);
