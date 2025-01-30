@@ -44,6 +44,12 @@
          * Initialize the handler
          */
         init() {
+            // Prevent multiple initializations
+            if (this.initialized) {
+                return;
+            }
+            
+            this.initialized = true;
             this.debug = typeof wilayahData !== 'undefined' && wilayahData.debug;
             this.bindEvents();
             this.setupLoadingState();
@@ -58,15 +64,19 @@
         },
 
         /**
-         * Bind event handlers
+         * Bind event handlers with namespacing
          */
         bindEvents() {
+            // Remove any existing bindings first
+            $(document).off('.wilayahSelect');
+            
+            // Add new bindings with namespace
             $(document)
-                .on('change', '.wilayah-province-select', this.handleProvinceChange.bind(this))
-                .on('wilayah:loaded', '.wilayah-regency-select', this.handleRegencyLoaded.bind(this))
-                .on('wilayah:error', this.handleError.bind(this))
-                .on('wilayah:beforeLoad', this.handleBeforeLoad.bind(this))
-                .on('wilayah:afterLoad', this.handleAfterLoad.bind(this));
+                .on('change.wilayahSelect', '.wilayah-province-select', this.handleProvinceChange.bind(this))
+                .on('wilayah:loaded.wilayahSelect', '.wilayah-regency-select', this.handleRegencyLoaded.bind(this))
+                .on('wilayah:error.wilayahSelect', this.handleError.bind(this))
+                .on('wilayah:beforeLoad.wilayahSelect', this.handleBeforeLoad.bind(this))
+                .on('wilayah:afterLoad.wilayahSelect', this.handleAfterLoad.bind(this));
         },
 
         /**
@@ -79,7 +89,13 @@
             }).hide();
 
             // Add loading indicator after each regency select
-            $('.wilayah-regency-select').after(this.$loadingIndicator.clone());
+            $('.wilayah-regency-select').each((i, el) => {
+                const $regency = $(el);
+                // Remove any existing loading indicators first
+                $regency.next('.wilayah-loading').remove();
+                // Add new loading indicator
+                $regency.after(this.$loadingIndicator.clone());
+            });
         },
 
         /**
@@ -87,10 +103,17 @@
          */
         handleProvinceChange(e) {
             const $province = $(e.target);
-            const $regency = $('.wilayah-regency-select');
             const provinceId = $province.val();
+            // Find the associated regency select using data-dependent attribute
+            const provinceElementId = $province.attr('id');
+            const $regency = $('[data-dependent="' + provinceElementId + '"]');
 
             this.debugLog('Province changed:', provinceId);
+
+            if (!$regency.length) {
+                this.debugLog('No dependent regency select found for province:', provinceElementId);
+                return;
+            }
 
             // Reset and disable regency select
             this.resetRegencySelect($regency);
