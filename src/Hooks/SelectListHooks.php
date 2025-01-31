@@ -134,92 +134,106 @@ class SelectListHooks {
     /**
      * Get province options with caching
      */
-    public function getProvinceOptions(array $default_options = [], bool $include_empty = true): array {
-        try {
-            $cache_key = 'province_options_' . md5(serialize($default_options) . $include_empty);
-            
-            // Try to get from cache first
-            $options = wp_cache_get($cache_key, 'wilayah_indonesia');
+        public function getProvinceOptions(array $default_options = [], bool $include_empty = true): array {
+            try {
+                // Pastikan default options selalu array
+                $options = $default_options;
+                
+                // Tambahkan opsi default jika diperlukan
+                if ($include_empty) {
+                    $options[''] = __('Pilih Provinsi', 'wilayah-indonesia');
+                }
 
-            if (false !== $options) {
-                $this->debugLog('Retrieved province options from cache');
-                return $options;
+                // Generate cache key
+                $cache_key = 'province_options_' . md5(serialize($default_options) . $include_empty);
+                if (empty($cache_key)) {
+                    return $options; // Return default jika cache key invalid
+                }
+
+                // Get from cache
+                $cached = $this->cache->get($cache_key);
+                if ($cached !== null && is_array($cached)) {
+                    return $cached;
+                }
+
+                // Get from database
+                $provinces = $this->province_model->getAllProvinces();
+                if (!empty($provinces)) {
+                    foreach ($provinces as $province) {
+                        $options[$province->id] = esc_html($province->name);
+                    }
+                    // Set cache
+                    $this->cache->set($cache_key, $options);
+                }
+
+                return $options; // Selalu return array
+
+            } catch (\Exception $e) {
+                $this->logError('Error getting province options: ' . $e->getMessage());
+                return $options; // Return default options pada error
             }
-
-            $options = $default_options;
-            
-            if ($include_empty) {
-                $options[''] = __('Pilih Provinsi', 'wilayah-indonesia');
-            }
-
-            $provinces = $this->province_model->getAllProvinces();
-            foreach ($provinces as $province) {
-                $options[$province->id] = esc_html($province->name);
-            }
-
-            // Cache the results
-            wp_cache_set($cache_key, $options, 'wilayah_indonesia', 12 * HOUR_IN_SECONDS);
-            $this->debugLog('Cached new province options');
-
-            return $options;
-
-        } catch (\Exception $e) {
-            $this->logError('Error getting province options: ' . $e->getMessage());
-            return $default_options;
         }
-    }
 
     /**
      * Get regency options with caching
      */
     public function getRegencyOptions(array $default_options = [], ?int $province_id = null, bool $include_empty = true): array {
         try {
-            if ($province_id) {
-                $cache_key = "regency_options_{$province_id}_" . md5(serialize($default_options) . $include_empty);
-                
-                // Try cache first
-                $options = $this->cache->get($cache_key);
-                if (false !== $options) {
-                    $this->debugLog("Retrieved regency options for province {$province_id} from cache");
-                    return $options;
-                }
-            }
-
+            // Pastikan default options selalu array
             $options = $default_options;
             
+            // Tambahkan opsi default
             if ($include_empty) {
                 $options[''] = __('Pilih Kabupaten/Kota', 'wilayah-indonesia');
             }
 
-            if ($province_id) {
-                // Menggunakan getDataTableData yang sudah ada
-                $result = $this->regency_model->getDataTableData(
-                    $province_id,  // province_id
-                    0,            // start dari awal
-                    1000,         // limit besar untuk ambil semua
-                    '',           // tanpa search
-                    'name',       // order by name
-                    'asc'         // ascending order
-                );
+            // Jika tidak ada province_id, return default options
+            if (empty($province_id)) {
+                return $options;
+            }
 
-                if (isset($result['data']) && is_array($result['data'])) {
-                    foreach ($result['data'] as $regency) {
+            // Generate cache key
+            $cache_key = sprintf(
+                'regency_options_p%d_%s', 
+                $province_id,
+                md5(serialize($default_options) . $include_empty)
+            );
+
+            // Get from cache
+            $cached = $this->cache->get($cache_key);
+            if ($cached !== null && is_array($cached)) {
+                return $cached;
+            }
+
+            // Get from database
+            $result = $this->regency_model->getDataTableData(
+                $province_id,
+                0,
+                1000,
+                '',
+                'name',
+                'asc'
+            );
+
+            if (!empty($result['data'])) {
+                foreach ($result['data'] as $regency) {
+                    if (!empty($regency->id)) {
                         $options[$regency->id] = esc_html($regency->name);
                     }
                 }
-
-                // Cache the results
-                $this->cache->set($cache_key, $options);
-                $this->debugLog("Cached new regency options for province {$province_id}");
+                // Cache hanya jika ada data valid
+                if (count($options) > 1) {
+                    $this->cache->set($cache_key, $options);
+                }
             }
 
-            return $options;
+            return $options; // Selalu return array
 
         } catch (\Exception $e) {
             $this->logError('Error getting regency options: ' . $e->getMessage());
-            return $default_options;
+            return $options; // Return default options pada error
         }
-    }
+}
 
     /**
      * Render province select element
