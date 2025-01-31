@@ -24,6 +24,8 @@
  * - Initial creation
  * - Added cache cleanup
  */
+use WilayahIndonesia\Cache\CacheManager;
+
 
 class Wilayah_Indonesia_Deactivator {
     private static function debug($message) {
@@ -56,10 +58,18 @@ class Wilayah_Indonesia_Deactivator {
                 self::debug("Dropping table: {$table_name}");
             }
 
-            // Bersihkan cache
-            wp_cache_delete('wilayah_indonesia_province_list', 'wilayah_indonesia');
-            wp_cache_delete('wilayah_indonesia_regency_list', 'wilayah_indonesia');
+            // Bersihkan cache menggunakan CacheManager
+            $cache = new CacheManager();
+            $cache->delete(CacheManager::KEY_PROVINCE_LIST);
 
+            // Bersihkan cache regency untuk semua provinsi
+            $provinces = $wpdb->get_results("SELECT id FROM {$wpdb->prefix}wi_provinces");
+            if ($provinces) {
+                foreach ($provinces as $province) {
+                    $cache->delete(CacheManager::KEY_REGENCY_LIST . $province->id);
+                }
+            }
+            
             // Hapus opsi versi
             delete_option('wilayah_indonesia_version');
 
