@@ -22,17 +22,54 @@
  * - Added method untuk DataTables server-side
  */
 
- namespace WilayahIndonesia\Models;
+namespace WilayahIndonesia\Models;
+
+use WilayahIndonesia\Cache\CacheManager;
 
  class ProvinceModel {
      private $table;
      private $regency_table;
+     
+     private $cache;
 
      public function __construct() {
          global $wpdb;
          $this->table = $wpdb->prefix . 'wi_provinces';
          $this->regency_table = $wpdb->prefix . 'wi_regencies';
+         $this->cache = new CacheManager();
      }
+
+    public function find($id): ?object {
+        // Ensure integer type for ID
+        $id = (int) $id;
+        
+        // Try to get from cache first
+        $cached = $this->cache->getProvince($id);
+        if ($cached !== null) {
+            return $cached;
+        }
+
+        global $wpdb;
+        $result = $wpdb->get_row($wpdb->prepare("
+            SELECT p.*, COUNT(r.id) as regency_count
+            FROM {$this->table} p
+            LEFT JOIN {$this->regency_table} r ON p.id = r.province_id
+            WHERE p.id = %d
+            GROUP BY p.id
+        ", $id));
+
+        if ($result === null) {
+            return null;
+        }
+
+        // Ensure regency_count is always an integer
+        $result->regency_count = (int) $result->regency_count;
+
+        // Cache the result
+        $this->cache->setProvince($id, $result);
+
+        return $result;
+    }
 
     public function create(array $data): ?int {
         global $wpdb;
@@ -53,32 +90,13 @@
             return null;
         }
 
-        return (int) $wpdb->insert_id;
+        $id = (int) $wpdb->insert_id;
+
+        // Invalidate province list cache
+        $this->cache->invalidateProvinceCache($id);
+
+        return $id;
     }
-
-     public function find($id): ?object {
-         global $wpdb;
-
-         // Ensure integer type for ID
-         $id = (int) $id;
-
-         $result = $wpdb->get_row($wpdb->prepare("
-             SELECT p.*, COUNT(r.id) as regency_count
-             FROM {$this->table} p
-             LEFT JOIN {$this->regency_table} r ON p.id = r.province_id
-             WHERE p.id = %d
-             GROUP BY p.id
-         ", $id));
-
-         if ($result === null) {
-             return null;
-         }
-
-         // Ensure regency_count is always an integer
-         $result->regency_count = (int) $result->regency_count;
-
-         return $result;
-     }
 
     public function update(int $id, array $data): bool {
         global $wpdb;
@@ -99,18 +117,30 @@
             ['%d']
         );
 
+        if ($result !== false) {
+            // Invalidate both single province and list cache
+            $this->cache->invalidateProvinceCache($id);
+        }
+
         return $result !== false;
     }
 
-     public function delete(int $id): bool {
-         global $wpdb;
+    public function delete(int $id): bool {
+        global $wpdb;
 
-         return $wpdb->delete(
-             $this->table,
-             ['id' => $id],
-             ['%d']
-         ) !== false;
-     }
+        $result = $wpdb->delete(
+            $this->table,
+            ['id' => $id],
+            ['%d']
+        );
+
+        if ($result !== false) {
+            // Invalidate both single province and list cache
+            $this->cache->invalidateProvinceCache($id);
+        }
+
+        return $result !== false;
+    }
 
     public function existsByCode(string $code, ?int $excludeId = null): bool {
         global $wpdb;
@@ -216,59 +246,57 @@
     }
     
     public function getAllProvinces(): array {
-    global $wpdb;
-    
-    try {
-        // Check cache first
-        $cache_key = 'all_provinces_list';
-        $provinces = wp_cache_get($cache_key, 'wilayah_indonesia');
-        
-        if (false !== $provinces) {
-            return $provinces;
-        }
+        try {
+            // Check cache first 
+            $provinces = $this->cache->getProvinceList();
+            
+            if ($provinces !== null) {
+                return $provinces;
+            }
 
-        // If not in cache, fetch from database
-        $sql = "SELECT p.*, COUNT(r.id) as regency_count 
-                FROM {$this->table} p
-                LEFT JOIN {$this->regency_table} r ON p.id = r.province_id
-                GROUP BY p.id
-                ORDER BY p.name ASC";
+            global $wpdb;
+            // If not in cache, fetch from database
+            $sql = "SELECT p.*, COUNT(r.id) as regency_count 
+                    FROM {$this->table} p
+                    LEFT JOIN {$this->regency_table} r ON p.id = r.province_id
+                    GROUP BY p.id
+                    ORDER BY p.name ASC";
+                    
+            $results = $wpdb->get_results($sql);
+            
+            if ($results === null) {
+                throw new \Exception($wpdb->last_error);
+            }
+            
+            // Format results
+            $provinces = array_map(function($province) {
+                // Ensure regency_count is integer
+                $province->regency_count = (int) $province->regency_count;
                 
-        $results = $wpdb->get_results($sql);
-        
-        if ($results === null) {
-            throw new \Exception($wpdb->last_error);
-        }
-        
-        // Format results
-        $provinces = array_map(function($province) {
-            // Ensure regency_count is integer
-            $province->regency_count = (int) $province->regency_count;
+                // Ensure created_by and updated_by are integers
+                if (isset($province->created_by)) {
+                    $province->created_by = (int) $province->created_by;
+                }
+                if (isset($province->updated_by)) {
+                    $province->updated_by = (int) $province->updated_by;
+                }
+                
+                return $province;
+            }, $results);
             
-            // Ensure created_by and updated_by are integers
-            if (isset($province->created_by)) {
-                $province->created_by = (int) $province->created_by;
-            }
-            if (isset($province->updated_by)) {
-                $province->updated_by = (int) $province->updated_by;
+            // Cache the results
+            $this->cache->setProvinceList($provinces);
+
+            return $provinces;
+            
+        } catch (\Exception $e) {
+            // Log error if debug mode is on
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log('ProvinceModel::getAllProvinces error: ' . $e->getMessage());
             }
             
-            return $province;
-        }, $results);
-        
-        // Cache the results
-        wp_cache_set($cache_key, $provinces, 'wilayah_indonesia', 12 * HOUR_IN_SECONDS);
-        
-        return $provinces;
-        
-    } catch (\Exception $e) {
-        // Log error if debug mode is on
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('ProvinceModel::getAllProvinces error: ' . $e->getMessage());
+            // Return empty array on error
+            return [];
         }
-        
-        // Return empty array on error
-        return [];
     }
-}
  }
