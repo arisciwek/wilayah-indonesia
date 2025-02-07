@@ -237,7 +237,7 @@
              if (window.Dashboard) {
                 window.Dashboard.loadStats(); // Gunakan loadStats() langsung
              }
-         }
+         },
      };
 
      // Initialize when document is ready
@@ -247,3 +247,92 @@
      });
 
  })(jQuery);
+
+/*
+---
+
+(function($) {
+    'use strict';
+
+    // Initialize wilayah handlers
+    function initWilayahHandlers() {
+        $(document).on('change', '.wilayah-province-select', handleProvinceChange);
+        
+        // If there's an initial province value, load its regencies
+        $('.wilayah-province-select').each(function() {
+            const $select = $(this);
+            const initialValue = $select.val();
+            
+            if (initialValue) {
+                const $regencySelect = $(`[data-dependent="${$select.attr('id')}"]`);
+                if ($regencySelect.length) {
+                    loadRegencyOptions($regencySelect, initialValue, $regencySelect.val());
+                }
+            }
+        });
+    }
+
+    // Load regency options via AJAX
+    async function loadRegencyOptions($regencySelect, provinceId, selectedId = '') {
+        if (!provinceId) {
+            resetRegencySelect($regencySelect);
+            return;
+        }
+
+        try {
+            // Show loading state
+            $regencySelect.prop('disabled', true);
+            $regencySelect.next('.wilayah-loading').show();
+
+            const response = await $.ajax({
+                url: wilayahData.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'get_regency_options',
+                    province_id: provinceId,
+                    nonce: $regencySelect.data('nonce')
+                }
+            });
+
+            if (response.success && response.data) {
+                updateRegencyOptions($regencySelect, response.data, selectedId);
+            } else {
+                throw new Error(response.data?.message || 'Failed to load regency options');
+            }
+        } catch (error) {
+            console.error('Error loading regency options:', error);
+            resetRegencySelect($regencySelect, true);
+        } finally {
+            $regencySelect.next('.wilayah-loading').hide();
+        }
+    }
+
+    // Update regency select with new options
+    function updateRegencyOptions($select, options, selectedId = '') {
+        let optionsHtml = '<option value="">Pilih Kabupaten/Kota</option>';
+        
+        Object.entries(options).forEach(([value, label]) => {
+            const selected = selectedId && selectedId == value ? 'selected' : '';
+            optionsHtml += `<option value="${value}" ${selected}>${label}</option>`;
+        });
+
+        $select
+            .html(optionsHtml)
+            .prop('disabled', false)
+            .trigger('change');
+    }
+
+    // Reset regency select to initial state
+    function resetRegencySelect($select, isError = false) {
+        const message = isError ? 'Error memuat data' : 'Pilih Kabupaten/Kota';
+        $select
+            .html(`<option value="">${message}</option>`)
+            .prop('disabled', true)
+            .trigger('change');
+    }
+
+    // Initialize when document is ready
+    $(document).ready(initWilayahHandlers);
+
+})(jQuery);
+*/
