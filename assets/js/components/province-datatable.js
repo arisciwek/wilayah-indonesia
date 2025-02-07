@@ -202,8 +202,23 @@
              });
          },
 
-         async loadProvinceForEdit(id) {
+	async loadProvinceForEdit(id) {
              if (!id) return;
+
+             // Wait for EditProvinceForm to be available
+             let attempts = 0;
+             const maxAttempts = 10;
+             
+             while (!window.EditProvinceForm && attempts < maxAttempts) {
+                 await new Promise(resolve => setTimeout(resolve, 100));
+                 attempts++;
+             }
+
+             if (!window.EditProvinceForm) {
+                 console.error('EditProvinceForm component not found');
+                 ProvinceToast.error('Komponen form edit tidak tersedia');
+                 return;
+             }
 
              try {
                  const response = await $.ajax({
@@ -217,11 +232,7 @@
                  });
 
                  if (response.success) {
-                     if (window.EditProvinceForm) {
-                         window.EditProvinceForm.showEditForm(response.data);
-                     } else {
-                         ProvinceToast.error('Komponen form edit tidak tersedia');
-                     }
+                     window.EditProvinceForm.showEditForm(response.data);
                  } else {
                      ProvinceToast.error(response.data?.message || 'Gagal memuat data provinsi');
                  }
