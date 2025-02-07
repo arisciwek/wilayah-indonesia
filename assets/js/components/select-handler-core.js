@@ -61,6 +61,9 @@
 
             // Trigger initialization complete event
             $(document).trigger('wilayah:initialized');
+
+            // Add this line: Check and load initial regency data
+            this.handleInitialRegencyLoad();            
         },
 
         /**
@@ -206,6 +209,58 @@
         handleAfterLoad(e, $province, $regency) {
             this.debugLog('After load event triggered');
             // Add any custom post-load handling here
+        },
+        // Di select-handler-core.js
+        handleInitialRegencyLoad() {
+            $('.wilayah-province-select').each((i, element) => {
+                const $province = $(element);
+                const provinceId = $province.val();
+                
+                if (provinceId) {
+                    const provinceElementId = $province.attr('id');
+                    const $regency = $('[data-dependent="' + provinceElementId + '"]');
+                    
+                    if ($regency.length) {
+                        // Get the existing regency value before loading
+                        const existingRegencyValue = $regency.val();
+                        
+                        this.debugLog('Found pre-selected province:', provinceId);
+                        this.showLoading($regency);
+                        
+                        $.ajax({
+                            url: wilayahData.ajaxUrl,
+                            type: 'POST',
+                            data: {
+                                action: 'get_regency_options',
+                                province_id: provinceId,
+                                nonce: wilayahData.nonce
+                            },
+                            success: (response) => {
+                                if (response.success) {
+                                    $regency.html(response.data.html);
+                                    
+                                    // Restore the existing value after loading options
+                                    if (existingRegencyValue) {
+                                        $regency.val(existingRegencyValue);
+                                    }
+                                    
+                                    $regency.trigger('wilayah:loaded', [response.data]);
+                                } else {
+                                    $(document).trigger('wilayah:error', [
+                                        response.data.message || wilayahData.texts.error
+                                    ]);
+                                }
+                            },
+                            error: (jqXHR, textStatus, errorThrown) => {
+                                this.debugLog('Initial AJAX error:', textStatus, errorThrown);
+                            },
+                            complete: () => {
+                                this.hideLoading($regency);
+                            }
+                        });
+                    }
+                }
+            });
         }
     };
 
